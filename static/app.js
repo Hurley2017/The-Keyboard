@@ -1,12 +1,12 @@
 'use strict';
 
 /* =========================================================
-   The-Keyboard — play your computer keyboard like a piano
+   The-Keyboard — your keyboard, reborn as a grand piano
    ---------------------------------------------------------
-   • Default mapping: keyboard keys -> piano notes (C4..C6)
+   • 61-key piano (C2–C7), sound synthesized live (Web Audio)
+   • Every row of your keyboard is a contiguous scale
    • Remap: click a piano key, then press a keyboard key
-   • Sound: synthesized piano via Web Audio API (no files)
-   • Mapping + volume are saved in localStorage
+   • Mapping + volume persist in localStorage
    ========================================================= */
 
 /* ---------------- notes & frequency ---------------- */
@@ -170,19 +170,17 @@ const Audio = (() => {
 })();
 
 /* ---------------- mapping ---------------- */
-const STORAGE_MAP = 'the-keyboard.mapping.v3';
+const STORAGE_MAP = 'the-keyboard.mapping.v4';
 const STORAGE_VOL = 'the-keyboard.volume.v1';
 
 // Max-coverage layout: every row is a contiguous ascending scale, each key
-// maps to exactly one note (no duplicates), and the mapping stretches across
-// the whole C3..C7 range: all white keys C3..C7 and all black keys C#4..A#6.
-// The only notes left unmapped are the deep-bass octave (C2..B2) and the
-// octave-3 sharps — a keyboard simply doesn't have enough keys for all 61.
+// maps to exactly one note (no duplicates), stretching across C3..C7:
+// all white keys C3..C7 and all black keys C#4..A#6 (44 of 61 notes).
 const DEFAULT_MAPPING = {
   // bottom row — whites C3..E4
   KeyZ: 'C3',   KeyX: 'D3',   KeyC: 'E3',  KeyV: 'F3',  KeyB: 'G3',
   KeyN: 'A3',   KeyM: 'B3',   Comma: 'C4', Period: 'D4', Slash: 'E4',
-  // home row — whites F4..B5  (the main, ascending scale)
+  // home row — whites F4..B5  (the main scale)
   KeyA: 'F4',   KeyS: 'G4',   KeyD: 'A4',  KeyF: 'B4',  KeyG: 'C5',
   KeyH: 'D5',   KeyJ: 'E5',   KeyK: 'F5',  KeyL: 'G5',  Semicolon: 'A5',
   Quote: 'B5',
@@ -243,7 +241,7 @@ function codeForNote(note) {
 
 function assignKey(code, note) {
   delete mapping[code]; // this key may have pointed at another note before
-  mapping[code] = note; // the same note may live on several keys, like an online piano
+  mapping[code] = note; // the same note may live on several keys
   saveMapping();
   renderPianoLabels();
   renderMappingList();
@@ -278,7 +276,10 @@ const heldNotes = new Set(); // notes currently sounding
 let remapMode = false;
 let remapTarget = null; // note name of the piano key awaiting a keyboard key
 
-function setStatus(msg) { el.status.textContent = msg; }
+function setStatus(msg, live = false) {
+  el.status.textContent = msg;
+  el.status.classList.toggle('live', live);
+}
 
 /* ---------------- piano rendering ---------------- */
 function renderPiano() {
@@ -349,7 +350,7 @@ function pressNote(note) {
   heldNotes.add(note);
   const k = keyEls.get(note);
   if (k) k.classList.add('active');
-  setStatus('▶ ' + note);
+  setStatus('♪ ' + note, true);
 }
 
 function releaseNote(note) {
@@ -381,7 +382,7 @@ function setRemapMode(on) {
   remapTarget = null;
   clearSelected();
   el.remapToggle.classList.toggle('active', on);
-  el.remapToggle.textContent = on ? 'Remap: ON' : 'Remap keys';
+  el.remapToggle.textContent = on ? 'Remap: ON' : 'Remap';
   el.piano.classList.toggle('remap-mode', on);
   el.banner.classList.toggle('hidden', !on);
   updateBanner();
@@ -393,7 +394,7 @@ function updateBanner() {
     el.bannerText.textContent = `Press a keyboard key to assign it to ${remapTarget} — Esc to cancel.`;
     el.banner.classList.add('on');
   } else {
-    el.bannerText.textContent = 'Remap mode: click a piano key, then press any keyboard key to map it.';
+    el.bannerText.textContent = 'Click a piano key, then press any keyboard key to map it.';
     el.banner.classList.remove('on');
   }
 }
@@ -503,4 +504,4 @@ el.volume.addEventListener('input', () => {
 renderPiano();
 renderPianoLabels();
 renderMappingList();
-setStatus('Press a key to play. Hold to sustain. Enable “Remap keys” to change the mapping.');
+setStatus('Press a key to play. Hold to sustain. Remap to make it yours.');

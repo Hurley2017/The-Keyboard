@@ -1,12 +1,12 @@
 """The-Keyboard — Flask app.
 
 Deploys to Vercel (@vercel/python) and is served both at the root of its own
-deployment (e.g. https://the-keyboard.vercel.app/) and under a sub-path proxy
-such as https://tusher.in/The-Keyboard/.
+deployment (e.g. https://the-keyboard-xxxx.vercel.app/) and under a sub-path
+proxy such as https://tusher.in/The-Keyboard/.
 
-Because the page can live under a sub-path, index.html uses *relative* asset
-links (static/style.css, static/app.js). This file serves those assets from
-both the root and the /The-Keyboard/ prefix so it works either way.
+index.html uses *relative* asset links (static/style.css, static/app.js) so the
+page works under any base path. This file serves those assets from both the
+root and the /The-Keyboard/ prefix.
 """
 
 import os
