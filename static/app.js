@@ -170,29 +170,30 @@ const Audio = (() => {
 })();
 
 /* ---------------- mapping ---------------- */
-const STORAGE_MAP = 'the-keyboard.mapping.v2';
+const STORAGE_MAP = 'the-keyboard.mapping.v3';
 const STORAGE_VOL = 'the-keyboard.volume.v1';
 
-// VirtualPiano-style standard layout: each row covers a complete range.
-// Home row = whites C4..F5 (the main octave), Q row = black keys C#4..D#6,
-// bottom row = C3..E4 whites, number row = C5..G6 whites. A few notes are
-// reachable from two rows, just like a real online piano.
+// Max-coverage layout: every row is a contiguous ascending scale, each key
+// maps to exactly one note (no duplicates), and the mapping stretches across
+// the whole C3..C7 range: all white keys C3..C7 and all black keys C#4..A#6.
+// The only notes left unmapped are the deep-bass octave (C2..B2) and the
+// octave-3 sharps — a keyboard simply doesn't have enough keys for all 61.
 const DEFAULT_MAPPING = {
-  // home row — whites C4..F5  (main)
-  KeyA: 'C4',   KeyS: 'D4',   KeyD: 'E4',  KeyF: 'F4',  KeyG: 'G4',
-  KeyH: 'A4',   KeyJ: 'B4',   KeyK: 'C5',  KeyL: 'D5',  Semicolon: 'E5',
-  Quote: 'F5',
+  // bottom row — whites C3..E4
+  KeyZ: 'C3',   KeyX: 'D3',   KeyC: 'E3',  KeyV: 'F3',  KeyB: 'G3',
+  KeyN: 'A3',   KeyM: 'B3',   Comma: 'C4', Period: 'D4', Slash: 'E4',
+  // home row — whites F4..B5  (the main, ascending scale)
+  KeyA: 'F4',   KeyS: 'G4',   KeyD: 'A4',  KeyF: 'B4',  KeyG: 'C5',
+  KeyH: 'D5',   KeyJ: 'E5',   KeyK: 'F5',  KeyL: 'G5',  Semicolon: 'A5',
+  Quote: 'B5',
   // Q row — black keys C#4..D#6
   KeyQ: 'C#4',  KeyW: 'D#4',  KeyE: 'F#4', KeyR: 'G#4', KeyT: 'A#4',
   KeyY: 'C#5',  KeyU: 'D#5',  KeyI: 'F#5', KeyO: 'G#5', KeyP: 'A#5',
   BracketLeft: 'C#6', BracketRight: 'D#6',
-  // bottom row — whites C3..E4
-  KeyZ: 'C3',   KeyX: 'D3',   KeyC: 'E3',  KeyV: 'F3',  KeyB: 'G3',
-  KeyN: 'A3',   KeyM: 'B3',   Comma: 'C4', Period: 'D4', Slash: 'E4',
-  // number row — whites C5..G6
-  Digit1: 'C5', Digit2: 'D5', Digit3: 'E5', Digit4: 'F5', Digit5: 'G5',
-  Digit6: 'A5', Digit7: 'B5', Digit8: 'C6', Digit9: 'D6', Digit0: 'E6',
-  Minus: 'F6',  Equal: 'G6',
+  // number row — whites C6..C7 + top black keys F#6..A#6
+  Digit1: 'C6', Digit2: 'D6', Digit3: 'E6', Digit4: 'F6', Digit5: 'G6',
+  Digit6: 'A6', Digit7: 'B6', Digit8: 'C7', Digit9: 'F#6', Digit0: 'G#6',
+  Minus: 'A#6',
 };
 
 const PUNCT_LABELS = {

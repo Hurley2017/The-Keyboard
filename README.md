@@ -21,19 +21,21 @@ The app is sub-path aware: it works at the root **and** at
 
 ## Playing
 
-- **A 61-key piano (C2 → C7)**, like a real keyboard, with the classic
-  VirtualPiano-style default mapping — every row plays notes:
+- **A 61-key piano (C2 → C7)**, like a real keyboard. Every row is a
+  contiguous ascending scale, so melodies fall right under your fingers:
 
-  | Row         | Keys                                | Notes                                  |
-  |-------------|-------------------------------------|----------------------------------------|
-  | Number row  | `1 2 3 4 5 6 7 8 9 0 - =`           | C5 D5 E5 F5 G5 A5 B5 C6 D6 E6 F6 G6    |
+  | Row         | Keys                                | Notes                                        |
+  |-------------|-------------------------------------|----------------------------------------------|
+  | Number row  | `1 2 3 4 5 6 7 8 9 0 -`             | C6 D6 E6 F6 G6 A6 B6 C7 F#6 G#6 A#6         |
   | Q row       | `Q W E R T Y U I O P [ ]`           | C#4 D#4 F#4 G#4 A#4 C#5 D#5 F#5 G#5 A#5 C#6 D#6 |
-  | Home row    | `A S D F G H J K L ; '`             | C4 D4 E4 F4 G4 A4 B4 C5 D5 E5 F5       |
-  | Bottom row  | `Z X C V B N M , . /`               | C3 D3 E3 F3 G3 A3 B3 C4 D4 E4          |
+  | Home row    | `A S D F G H J K L ; '`             | F4 G4 A4 B4 C5 D5 E5 F5 G5 A5 B5            |
+  | Bottom row  | `Z X C V B N M , . /`               | C3 D3 E3 F3 G3 A3 B3 C4 D4 E4               |
 
   The mapped key is printed on each piano key, so it's always easy to read.
-  A few notes are reachable from two rows (e.g. C4 on both `A` and `,`), just
-  like on an online piano.
+  This covers every white key C3–C7 and every black key C#4–A#6 (44 of 61).
+  The only notes without a default key are the deep-bass octave (C2–B2) and
+  the octave-3 sharps — a keyboard simply has fewer keys than a piano, so
+  those are left free for you to remap (they still work with the mouse).
 
 - **Hold** a key to sustain the note (release fades it out).
 - **Click / touch** piano keys to play with the mouse or finger.
