@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0d0e1c" />
+  <title>The-Keyboard — play your keyboard like a piano</title>
+  <link rel="stylesheet" href="static/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>The-Keyboard</h1>
+    <p class="tagline">Can&rsquo;t afford a Yamaha? Neither can we. Map your WASD into tunes.</p>
+  </header>
+
+  <main>
+    <section class="controls">
+      <button id="remap-toggle" class="btn" title="Click a piano key, then press a keyboard key to map it">Remap keys</button>
+      <button id="reset-btn" class="btn" title="Restore the default mapping">Reset mapping</button>
+      <label class="volume">
+        <span>Volume</span>
+        <input id="volume" type="range" min="0" max="1" step="0.01" value="0.8" />
+      </label>
+    </section>
+
+    <p id="status" class="status">Press a key on your keyboard to play a note…</p>
+
+    <section class="piano-wrap">
+      <div id="piano" class="piano">
+        <div class="keys-area" id="keys-area"></div>
+      </div>
+    </section>
+
+    <section id="remap-banner" class="banner hidden">
+      <span id="banner-text"></span>
+    </section>
+
+    <section class="mapping-panel">
+      <h2>Current mapping &mdash; click a row to remap that note</h2>
+      <div id="mapping-list" class="mapping-list"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>
+      Hold keys to sustain &middot; click piano keys with the mouse &middot;
+      press <kbd>Esc</kbd> while remapping to cancel &middot; settings are saved in your browser
+    </p>
+  </footer>
+
+  <script src="static/app.js"></script>
+</body>
+</html>

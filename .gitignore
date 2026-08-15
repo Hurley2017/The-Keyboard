@@ -1,0 +1,14 @@
+# Python / Flask
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Vercel
+.vercel/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
