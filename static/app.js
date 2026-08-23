@@ -796,6 +796,20 @@ const SAMPLES = [
       'G3:1.5 B3:0.5 C4:0.5 D4:0.5 C4:0.5 B3:0.5 E3:2'
   },
   {
+    id: 'shinunoga', title: 'Shinunoga E-Wa', composer: 'Fujii Kaze', bpm: 78,
+    data:
+      // F#m – D – A – E loop: gentle arpeggiated verse-style line, then a
+      // fuller chorus pass. Bass roots + soft chord tones, staying in range.
+      'F#3+A3+C#4+E4:3 A3+C#4+E4:1 ' +
+      'D3+A3+D4+F#4:3 A3+D4+F#4:1 ' +
+      'A2+E3+A3+C#4:3 E3+A3+C#4:1 ' +
+      'E3+G#3+B3+E4:3 G#3+B3+E4:1 ' +
+      'F#3+A3+C#4+E4:3 A3+C#4+E4:1 ' +
+      'D3+A3+D4+F#4:3 A3+D4+F#4:1 ' +
+      'A2+E3+A3+C#4:3 E3+A3+C#4:1 ' +
+      'E3+G#3+B3+E4:2 R:1'
+  },
+  {
     id: 'merry-go-round', title: "Merry-Go-Round of Life", composer: 'Joe Hisaishi', bpm: 96,
     data:
       'C5:1 E5:1 G5:1 C6:1 G5:1 E5:1 C5:2 G4:2 C5:1 E5:1 G5:1 D6:1 G5:1 D5:1 B4:2 G4:2 ' +
@@ -855,11 +869,11 @@ function renderSamples() {
     card.innerHTML =
       `<span class="sample-fill"></span>` +
       `<span class="sample-num">${String(i + 1).padStart(2, '0')}</span>` +
-      `<span class="sample-meta"><span class="sample-title"></span><span class="sample-composer"></span></span>` +
+      `<span class="sample-name"><span class="sample-title"></span><span class="sample-artist"></span></span>` +
       `<span class="sample-dur">${fmt}</span>` +
       `<button class="btn ghost sample-play" data-sample="${s.id}">▶ Play</button>`;
     card.querySelector('.sample-title').textContent = s.title;
-    card.querySelector('.sample-composer').textContent = s.composer;
+    card.querySelector('.sample-artist').textContent = s.composer;
     card.querySelector('.sample-play').addEventListener('click', () => {
       player.current === s.id ? stopSample() : playSample(s);
     });
@@ -887,7 +901,8 @@ function playSample(s) {
       }, ev.dur * 1000));
     }, ev.time * 1000));
   });
-  // progress fill: grows left to right in the opposite theme colour
+  // progress fill: grows left to right in the opposite theme colour, driven
+  // by requestAnimationFrame so it animates smoothly (no stepped jumps)
   const playBtn = document.querySelector(`.sample-play[data-sample="${s.id}"]`);
   const card = playBtn && playBtn.closest('.sample-card');
   if (card) {
@@ -896,19 +911,24 @@ function playSample(s) {
     fill.style.transform = 'scaleX(0)';
     player.start = performance.now();
     player.total = total * 1000;
-    player.fillTimer = setInterval(() => {
-      if (!player.card) { clearInterval(player.fillTimer); player.fillTimer = null; return; }
-      const pct = Math.min(1, (performance.now() - player.start) / player.total);
+    const tick = (now) => {
+      if (!player.card) { player.fillTimer = null; return; }
+      const pct = Math.min(1, (now - player.start) / player.total);
       player.card.querySelector('.sample-fill').style.transform = `scaleX(${pct})`;
-      if (pct >= 1) { clearInterval(player.fillTimer); player.fillTimer = null; }
-    }, 100);
+      if (pct < 1) {
+        player.fillTimer = requestAnimationFrame(tick);
+      } else {
+        player.fillTimer = null;
+      }
+    };
+    player.fillTimer = requestAnimationFrame(tick);
   }
   player.timers.push(setTimeout(() => stopSample(), (total + 0.4) * 1000));
   updateSampleButtons();
 }
 
 function stopSample() {
-  if (player.fillTimer) { clearInterval(player.fillTimer); player.fillTimer = null; }
+  if (player.fillTimer != null) { cancelAnimationFrame(player.fillTimer); player.fillTimer = null; }
   if (player.card) {
     const fill = player.card.querySelector('.sample-fill');
     if (fill) fill.style.transform = 'scaleX(0)';
