@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KeyNote — Instruments</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --panel: #111111;
+      --panel-2: #181818;
+      --border: #2c2c2c;
+      --text: #f2f2f2;
+      --muted: #9a9a9a;
+      --font: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+    }
+    :root[data-theme="light"] {
+      --bg: #f2f2f2;
+      --panel: #ffffff;
+      --panel-2: #ebebeb;
+      --border: #d5d5d5;
+      --text: #151515;
+      --muted: #6f6f6f;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      font-size: 14px;
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    :root[data-theme="light"] body { background: var(--bg); }
+    .wrap {
+      flex: 1;
+      width: min(980px, 92vw);
+      margin: 0 auto;
+      padding: 60px 0 40px;
+      text-align: center;
+    }
+    .logo { font-size: 40px; }
+    .wrap h1 {
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-top: 12px;
+      color: var(--text);
+    }
+    .subtitle {
+      font-family: var(--font-mono);
+      color: var(--muted);
+      margin-top: 8px;
+      font-size: 11px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 14px;
+      margin-top: 44px;
+      text-align: left;
+    }
+    .card {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 22px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      text-decoration: none;
+      color: var(--text);
+      transition: transform 0.12s ease, border-color 0.12s ease, background-color 0.3s ease;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: var(--text);
+    }
+    .card .icon { font-size: 30px; }
+    .card h2 { font-size: 18px; letter-spacing: 0.5px; }
+    .card p {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+    .card .enter {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text);
+      margin-top: auto;
+    }
+    .card:hover .enter { text-decoration: underline; text-underline-offset: 3px; }
+    footer {
+      font-family: var(--font-mono);
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      padding: 18px;
+      text-align: center;
+    }
+    .empty { color: var(--muted); margin-top: 40px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="logo">♪</div>
+    <h1>KeyNote</h1>
+    <p class="subtitle">Virtual instruments, playable from your keyboard</p>
+
+    <div class="grid">
+      {% for name in instruments %}
+      <a class="card" href="{{ '/' + name }}">
+        <div class="icon">♪</div>
+        <h2>{{ name }}</h2>
+        <p>Play {{ name }} live with your computer keyboard. Keys are fully remappable.</p>
+        <div class="enter">Open {{ name }} →</div>
+      </a>
+      {% endfor %}
+    </div>
+
+    {% if not instruments %}
+    <p class="empty">No instruments registered yet.</p>
+    {% endif %}
+  </div>
+
+  <footer>KeyNote — add a template and a line in api/index.py to register a new instrument.</footer>
+  <script>
+    // match the piano app's theme toggle
+    (function () {
+      var saved = 'dark';
+      try { saved = localStorage.getItem('keynote.theme') || 'dark'; } catch (e) {}
+      document.documentElement.dataset.theme = saved;
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KeyNote — Piano Emulator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="static/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎹</text></svg>" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+          <rect x="1.5" y="1.5" width="29" height="29" fill="var(--text)" />
+          <g fill="var(--bg)" stroke="var(--bg)" stroke-linecap="square">
+            <ellipse cx="9" cy="22.5" rx="4.2" ry="3" />
+            <line x1="12.8" y1="20.5" x2="12.8" y2="10" stroke-width="1.8" />
+            <ellipse cx="18.5" cy="19.5" rx="3.6" ry="2.6" />
+            <line x1="21.9" y1="18" x2="21.9" y2="8.5" stroke-width="1.8" />
+            <line x1="12.8" y1="10.6" x2="21.9" y2="8.8" stroke-width="2.4" />
+          </g>
+        </svg>
+        <h1>KeyNote</h1>
+        <span class="tagline">Piano Emulator</span>
+      </div>
+      <div class="controls">
+        <label class="octave-label">Octave <input id="octave" type="number" min="1" max="7" value="4" /> <span id="octaveRange" class="range-hint">C4 – B5</span></label>
+        <button id="infoBtn" class="btn ghost" title="How to play">i</button>
+        <button id="remapBtn" class="btn" title="Reassign the computer keys that play each piano key">Remap Keys</button>
+        <button id="themeBtn" class="btn ghost" title="Toggle between dark and light theme">☀️ Light</button>
+        <button id="resetBtn" class="btn ghost" title="Restore the default key layout">Reset</button>
+      </div>
+    </header>
+
+    <div id="infoPop" class="info-pop hidden">
+      <ul>
+        <li>Play with your computer keyboard, or click and drag across the keys.</li>
+        <li><kbd>Space</kbd> holds the sustain pedal.</li>
+        <li>Remap Keys reassigns any note to the computer key of your choice.</li>
+        <li><kbd>Esc</kbd> stops all sound instantly.</li>
+        <li>The covers below the piano play themselves — notes, keys and all.</li>
+      </ul>
+    </div>
+
+    <main>
+      <div class="piano-wrap">
+        <div class="piano-scroll">
+          <div id="piano" class="piano"></div>
+        </div>
+      </div>
+
+      <section class="samples">
+        <div class="samples-head">
+          <h2>Famous Piano Covers</h2>
+        </div>
+        <div id="sampleList" class="sample-list"></div>
+      </section>
+    </main>
+
+    <footer class="statusbar">
+      <span id="status">Ready.</span>
+      <span id="conflicts" class="conflicts hidden"></span>
+    </footer>
+  </div>
+
+  <div id="rotateOverlay" class="rotate-overlay">
+    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="6">
+      <rect x="30" y="12" width="40" height="76" rx="3" />
+      <line x1="44" y1="82" x2="56" y2="82" />
+      <path d="M12 30 A 34 34 0 0 1 76 22" stroke-linecap="square" />
+      <path d="M88 40 A 34 34 0 0 1 24 46" stroke-linecap="square" />
+      <polygon points="76,10 84,22 68,22" />
+      <polygon points="24,58 16,46 32,46" />
+    </svg>
+    <p>Rotate your device to portrait<br />for the full-screen experience</p>
+  </div>
+
+  <div id="overlay" class="overlay hidden">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Remap Keys</h2>
+        <button id="closeRemap" class="btn ghost">Done</button>
+      </div>
+      <p class="panel-info">Click a piano key to select it, then press the computer key you want to assign. Press <kbd>Esc</kbd> or <kbd>Delete</kbd> to unassign a note. <kbd>Space</kbd> is reserved for the sustain pedal.</p>
+      <ul id="layoutList" class="layout-list"></ul>
+    </div>
+  </div>
+
+  <script src="static/app.js"></script>
+</body>
+</html>
