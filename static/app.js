@@ -1034,15 +1034,23 @@ function playerLoop(now) {
 }
 
 function updateSampleButtons() {
-  document.querySelectorAll('.sample-play').forEach(btn => {
+  // only the real button — the inverted overlay also carries .sample-play
+  document.querySelectorAll('button.sample-play').forEach(btn => {
     const isThis = btn.dataset.sample === player.current;
     const active = isThis && player.playing;
     const paused = isThis && !player.playing && player.current != null;
-    btn.textContent = !isThis ? '▶ Play' : (player.playing ? '❚❚ Pause' : (player.current != null ? '▶ Resume' : '▶ Play'));
+    const newText = !isThis ? '▶ Play' : (player.playing ? '❚❚ Pause' : (player.current != null ? '▶ Resume' : '▶ Play'));
+    if (btn.textContent !== newText) btn.textContent = newText;
     btn.classList.toggle('playing', active);
     btn.classList.toggle('paused', paused);
     const card = btn.closest('.sample-card');
     if (card) card.classList.toggle('playing', active);
+    // keep the inverted overlay in sync with the button's label so the
+    // progress bar never shows a stale "▶ Play" over "Resume"/"Pause"
+    if (card && card._overlays) {
+      const ov = card._overlays.find(o => o.src === btn);
+      if (ov && ov.o.innerHTML !== btn.innerHTML) ov.o.innerHTML = btn.innerHTML;
+    }
   });
 }
 
