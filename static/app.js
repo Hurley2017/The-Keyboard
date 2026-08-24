@@ -99,9 +99,28 @@ class Engine {
     this.compressor.attack.value = 0.002;
     this.compressor.release.value = 0.18;
     this.master = this.ctx.createGain();
-    this.master.gain.value = 0.7;
+    this.master.gain.value = 0.8;
     this.master.connect(this.compressor);
     this.compressor.connect(this.ctx.destination);
+
+    // a soft, short hall tail so notes ring and "travel" like a real piano,
+    // instead of sounding dry and boxy
+    this.wet = this.ctx.createGain();
+    this.wet.gain.value = 0.14;
+    const delay = this.ctx.createDelay(0.5);
+    delay.delayTime.value = 0.09;
+    const fb = this.ctx.createGain();
+    fb.gain.value = 0.38;
+    const lp = this.ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 2600;
+    this.wet.connect(delay);
+    delay.connect(fb);
+    fb.connect(delay);
+    delay.connect(lp);
+    lp.connect(this.wet);
+    this.wet.connect(this.compressor);
+    this.reverbIn = this.wet; // notes tap into this for the tail
   }
 
   frequency(midi) {
@@ -137,95 +156,84 @@ class Engine {
 
     const freq = this.frequency(midi);
     const id = ++this.voiceId;
-    const dur = 1.2;
+
+    // Rich piano-ish tone: a fundamental plus 2nd/3rd partials. The higher
+    // partials are quieter and decay faster — like a struck string, whose
+    // harmonics die before the fundamental — so notes ring out fully.
+    const dur = 2.4;            // longer fundamental decay, notes "travel"
+    const vel = Math.min(1, velocity * 1.1);
 
     const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.0001, t); // tiny floor avoids a click at t
-    gain.gain.exponentialRampToValueAtTime(velocity * 0.5, t + 0.015);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(vel * 0.5, t + 0.01);
 
+    // fundamental
     const osc = this.ctx.createOscillator();
     osc.type = 'triangle';
     osc.frequency.value = freq;
 
-    // gentle chorus-ish detune
+    // 2nd partial (octave) — body
     const osc2 = this.ctx.createOscillator();
     osc2.type = 'triangle';
-    osc2.frequency.value = freq;
-    osc2.detune.value = 6;
-
+    osc2.frequency.value = freq * 2;
     const g2 = this.ctx.createGain();
-    g2.gain.value = 0.3;
+    g2.gain.value = 0.22;
     osc2.connect(g2);
     g2.connect(gain);
 
-    // warm body partial (an octave up) for a fuller tone
+    // 3rd partial (octave + fifth) — a bit of bell-like colour
     const osc3 = this.ctx.createOscillator();
     osc3.type = 'sine';
-    osc3.frequency.value = freq * 2;
+    osc3.frequency.value = freq * 3;
     const g3 = this.ctx.createGain();
-    g3.gain.value = 0.12;
+    g3.gain.value = 0.08;
     osc3.connect(g3);
     g3.connect(gain);
 
+    // warm fundamental reinforcement an octave below (fuller low end)
+    const osc4 = this.ctx.createOscillator();
+    osc4.type = 'sine';
+    osc4.frequency.value = freq / 2;
+    const g4 = this.ctx.createGain();
+    g4.gain.value = 0.14;
+    osc4.connect(g4);
+    g4.connect(gain);
+
+    // smooth lowpass that opens with velocity — brighter on hard hits
     const filter = this.ctx.createBiquadFilter();
     filter.type = 'lowpass';
-    filter.frequency.value = 3600;
-    filter.Q.value = 0.4;
+    filter.frequency.value = 2800 + vel * 2200;
+    filter.Q.value = 0.3;
     gain.connect(filter);
     filter.connect(this.master);
+
+    // tap a little of the dry signal into the hall tail for space
+    const send = this.ctx.createGain();
+    send.gain.value = 0.5;
+    filter.connect(send);
+    send.connect(this.reverbIn);
 
     osc.start(t);
     osc2.start(t);
     osc3.start(t);
-    gain.gain.exponentialRampToValueAtTime(velocity * 0.5, t + 0.015);
+    osc4.start(t);
+    gain.gain.exponentialRampToValueAtTime(vel * 0.5, t + 0.01);
     gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
-
-    // hammer: a tiny filtered noise click on the attack, like felt hitting the string
-    const hammer = this.makeHammer(t);
-    if (hammer) {
-      const { src } = hammer;
-      const clean = () => { try { hammer.bp.disconnect(); hammer.hg.disconnect(); } catch (e) { /* gone */ } };
-      src.onended = clean;
-      setTimeout(clean, 120);
-    }
 
     const endAt = t + dur;
     osc.stop(endAt + 0.05);
     osc2.stop(endAt + 0.05);
     osc3.stop(endAt + 0.05);
+    osc4.stop(endAt + 0.05);
 
     // free Web Audio nodes once the note has died, or memory grows with every press
-    const nodes = [osc, osc2, osc3, g2, g3, gain, filter];
+    const nodes = [osc, osc2, osc3, osc4, g2, g3, g4, gain, filter, send];
     setTimeout(() => {
       try { nodes.forEach(n => n.disconnect()); } catch (e) { /* already gone */ }
-    }, (dur + 0.5) * 1000);
+    }, (dur + 0.6) * 1000);
 
-    this.active.set(midi, { osc, osc2, osc3, gain, endAt, nodes, id });
+    this.active.set(midi, { osc, osc2, osc3, osc4, gain, endAt, nodes, id });
     return id;
-  }
-
-  makeHammer(t) {
-    if (!this.ctx) return null;
-    const len = Math.floor(this.ctx.sampleRate * 0.03);
-    const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
-    const data = buf.getChannelData(0);
-    for (let i = 0; i < len; i++) {
-      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
-    }
-    const src = this.ctx.createBufferSource();
-    src.buffer = buf;
-    const bp = this.ctx.createBiquadFilter();
-    bp.type = 'bandpass';
-    bp.frequency.value = 2600;
-    bp.Q.value = 0.8;
-    const hg = this.ctx.createGain();
-    hg.gain.value = 0.15;
-    src.connect(bp);
-    bp.connect(hg);
-    hg.connect(this.master);
-    src.start(t);
-    src.stop(t + 0.04);
-    return { src, bp, hg };
   }
 
   noteOff(midi, id) {
@@ -250,7 +258,7 @@ class Engine {
     v.gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
     this.active.delete(midi);
     setTimeout(() => {
-      try { v.osc.stop(); v.osc2.stop(); v.osc3.stop(); } catch (e) { /* already stopped */ }
+      try { v.osc.stop(); v.osc2.stop(); v.osc3.stop(); v.osc4.stop(); } catch (e) { /* already stopped */ }
       try { v.nodes.forEach(n => n.disconnect()); } catch (e) { /* already gone */ }
     }, 1000);
   }
@@ -270,7 +278,7 @@ class Engine {
       v.gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
       this.active.delete(midi);
       setTimeout(() => {
-        try { v.osc.stop(); v.osc2.stop(); } catch (e) { /* already stopped */ }
+        try { v.osc.stop(); v.osc2.stop(); v.osc3.stop(); v.osc4.stop(); } catch (e) { /* already stopped */ }
         try { v.nodes.forEach(n => n.disconnect()); } catch (e) { /* already gone */ }
       }, 350);
     }
@@ -670,35 +678,62 @@ function showConflicts() {
 
 /* ============ Famous piano covers ============ */
 
-// Single cover for now: Shinunoga E-Wa by Fujii Kaze.
-// Key of E — verse E·G#m·F#m·D (E major), chorus Em·Am·F·B7 (E minor).
-// Real solo-piano feel: LH walks root–fifth on every beat under the RH,
-// which carries the iconic F#·B·A·G·A·G·E hook riff (verified against
-// chord charts + letter-note transcriptions).
+// Shinunoga E-Wa by Fujii Kaze — a FULL cover (~2 min), not a loop.
+// Structure (verified vs Cifra Club, key of E):
+//   Intro E·G#m·F#m·D → Verse (E·G#m·F#m·D ×2) → Chorus (Em·Am·F·B7 ×2)
+//   → Verse 2 → Chorus 2 → Outro (ends on a held E).
+// Every bar is a full chord: bass root+fifth (+octave) under the RH melody,
+// which carries the iconic hook riff F#·B·A·G·A·G·E. Sounds like two hands.
 const SAMPLES = [
   {
     id: 'shinunoga', title: 'Shinunoga E-Wa', composer: 'Fujii Kaze', bpm: 80,
     data:
-      // INTRO — the hook riff, one bar per chord (E · G#m · F#m · D)
-      'E2+F#5:0.5 B2+B5:0.5 E2+A5:0.5 B2+G5:0.5 E2+A5:0.5 B2+G5:0.5 E2+E5:1 ' +
-      'G#2+A5:0.5 D#3+B5:0.5 G#2+A5:0.5 D#3+G5:0.5 G#2+A5:0.5 D#3+G5:0.5 G#2+E5:1 ' +
-      'F#2+F#5:0.5 C#3+B5:0.5 F#2+A5:0.5 C#3+G5:0.5 F#2+A5:0.5 C#3+G5:0.5 F#2+E5:1 ' +
-      'D3+A5:0.5 A3+B5:0.5 D3+A5:0.5 A3+G5:0.5 D3+A5:0.5 A3+G5:0.5 D3+E5:1 ' +
-      // VERSE — same riff, fuller octave bass to lift it
-      'E2+E3+F#5:0.5 B2+B3+B5:0.5 E2+E3+A5:0.5 B2+B3+G5:0.5 E2+E3+A5:0.5 B2+B3+G5:0.5 E2+E3+E5:1 ' +
-      'G#2+G#3+A5:0.5 D#3+D#4+B5:0.5 G#2+G#3+A5:0.5 D#3+D#4+G5:0.5 G#2+G#3+A5:0.5 D#3+D#4+G5:0.5 G#2+G#3+E5:1 ' +
-      'F#2+F#3+F#5:0.5 C#3+C#4+B5:0.5 F#2+F#3+A5:0.5 C#3+C#4+G5:0.5 F#2+F#3+A5:0.5 C#3+C#4+G5:0.5 F#2+F#3+E5:1 ' +
-      'D3+D4+A5:0.5 A3+A4+B5:0.5 D3+D4+A5:0.5 A3+A4+G5:0.5 D3+D4+A5:0.5 A3+A4+G5:0.5 D3+D4+E5:1 ' +
-      // CHORUS — Em · Am · F · B7, same riff with the minor-colour bass
-      'E2+E3+F#5:0.5 B2+B3+B5:0.5 E2+E3+A5:0.5 B2+B3+G5:0.5 E2+E3+A5:0.5 B2+B3+G5:0.5 E2+E3+E5:1 ' +
-      'A2+A3+A5:0.5 E3+E4+B5:0.5 A2+A3+A5:0.5 E3+E4+G5:0.5 A2+A3+A5:0.5 E3+E4+G5:0.5 A2+A3+E5:1 ' +
-      'F2+F3+F#5:0.5 C3+C4+B5:0.5 F2+F3+A5:0.5 C3+C4+G5:0.5 F2+F3+A5:0.5 C3+C4+G5:0.5 F2+F3+E5:1 ' +
-      'B2+B3+F#5:0.5 F#3+F#4+B5:0.5 B2+B3+A5:0.5 F#3+F#4+G5:0.5 B2+B3+A5:0.5 F#3+F#4+G5:0.5 B2+B3+E5:1 ' +
-      // VERSE 2 — back to the major-key round
-      'E2+E3+F#5:0.5 B2+B3+B5:0.5 E2+E3+A5:0.5 B2+B3+G5:0.5 E2+E3+A5:0.5 B2+B3+G5:0.5 E2+E3+E5:1 ' +
-      'G#2+G#3+A5:0.5 D#3+D#4+B5:0.5 G#2+G#3+A5:0.5 D#3+D#4+G5:0.5 G#2+G#3+A5:0.5 D#3+D#4+G5:0.5 G#2+G#3+E5:1 ' +
-      'F#2+F#3+F#5:0.5 C#3+C#4+B5:0.5 F#2+F#3+A5:0.5 C#3+C#4+G5:0.5 F#2+F#3+A5:0.5 C#3+C#4+G5:0.5 F#2+F#3+E5:1 ' +
-      'D3+D4+A5:0.5 A3+A4+B5:0.5 D3+D4+A5:0.5 A3+A4+G5:0.5 D3+D4+A5:0.5 A3+A4+G5:0.5 D3+D4+E5:2'
+      // INTRO (E · G#m · F#m · D) — light: root + 5th + melody
+      'E2+B2+F#5:0.5 E2+B2+B5:0.5 E2+B2+A5:0.5 E2+B2+G5:0.5 E2+B2+A5:0.5 E2+B2+G5:0.5 E2+B2+E5:1 ' +
+      'G#2+D#3+F#5:0.5 G#2+D#3+B5:0.5 G#2+D#3+A5:0.5 G#2+D#3+G5:0.5 G#2+D#3+A5:0.5 G#2+D#3+G5:0.5 G#2+D#3+E5:1 ' +
+      'F#2+C#3+F#5:0.5 F#2+C#3+B5:0.5 F#2+C#3+A5:0.5 F#2+C#3+G5:0.5 F#2+C#3+A5:0.5 F#2+C#3+G5:0.5 F#2+C#3+E5:1 ' +
+      'D2+A2+F#5:0.5 D2+A2+B5:0.5 D2+A2+A5:0.5 D2+A2+G5:0.5 D2+A2+A5:0.5 D2+A2+G5:0.5 D2+A2+E5:1 ' +
+      // VERSE 1 (E · G#m · F#m · D ×2) — fuller: root + 5th + octave + melody
+      'E2+B2+E3+F#5:0.5 E2+B2+E3+B5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+E5:1 ' +
+      'G#2+D#3+G#3+F#5:0.5 G#2+D#3+G#3+B5:0.5 G#2+D#3+G#3+A5:0.5 G#2+D#3+G#3+G5:0.5 G#2+D#3+G#3+A5:0.5 G#2+D#3+G#3+G5:0.5 G#2+D#3+G#3+E5:1 ' +
+      'F#2+C#3+F#3+F#5:0.5 F#2+C#3+F#3+B5:0.5 F#2+C#3+F#3+A5:0.5 F#2+C#3+F#3+G5:0.5 F#2+C#3+F#3+A5:0.5 F#2+C#3+F#3+G5:0.5 F#2+C#3+F#3+E5:1 ' +
+      'D2+A2+D3+F#5:0.5 D2+A2+D3+B5:0.5 D2+A2+D3+A5:0.5 D2+A2+D3+G5:0.5 D2+A2+D3+A5:0.5 D2+A2+D3+G5:0.5 D2+A2+D3+E5:1 ' +
+      'E2+B2+E3+F#5:0.5 E2+B2+E3+B5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+E5:1 ' +
+      'G#2+D#3+G#3+F#5:0.5 G#2+D#3+G#3+B5:0.5 G#2+D#3+G#3+A5:0.5 G#2+D#3+G#3+G5:0.5 G#2+D#3+G#3+A5:0.5 G#2+D#3+G#3+G5:0.5 G#2+D#3+G#3+E5:1 ' +
+      'F#2+C#3+F#3+F#5:0.5 F#2+C#3+F#3+B5:0.5 F#2+C#3+F#3+A5:0.5 F#2+C#3+F#3+G5:0.5 F#2+C#3+F#3+A5:0.5 F#2+C#3+F#3+G5:0.5 F#2+C#3+F#3+E5:1 ' +
+      'D2+A2+D3+F#5:0.5 D2+A2+D3+B5:0.5 D2+A2+D3+A5:0.5 D2+A2+D3+G5:0.5 D2+A2+D3+A5:0.5 D2+A2+D3+G5:0.5 D2+A2+D3+E5:1 ' +
+      // CHORUS 1 (Em · Am · F · B7 ×2) — minor colour, big chords
+      'E2+B2+E3+F#5:0.5 E2+B2+E3+B5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+E5:1 ' +
+      'A2+E3+A3+F#5:0.5 A2+E3+A3+B5:0.5 A2+E3+A3+A5:0.5 A2+E3+A3+G5:0.5 A2+E3+A3+A5:0.5 A2+E3+A3+G5:0.5 A2+E3+A3+E5:1 ' +
+      'F2+C3+F3+F#5:0.5 F2+C3+F3+B5:0.5 F2+C3+F3+A5:0.5 F2+C3+F3+G5:0.5 F2+C3+F3+A5:0.5 F2+C3+F3+G5:0.5 F2+C3+F3+E5:1 ' +
+      'B2+F#3+B3+F#5:0.5 B2+F#3+B3+B5:0.5 B2+F#3+B3+A5:0.5 B2+F#3+B3+G5:0.5 B2+F#3+B3+A5:0.5 B2+F#3+B3+G5:0.5 B2+F#3+B3+E5:1 ' +
+      'E2+B2+E3+F#5:0.5 E2+B2+E3+B5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+E5:1 ' +
+      'A2+E3+A3+F#5:0.5 A2+E3+A3+B5:0.5 A2+E3+A3+A5:0.5 A2+E3+A3+G5:0.5 A2+E3+A3+A5:0.5 A2+E3+A3+G5:0.5 A2+E3+A3+E5:1 ' +
+      'F2+C3+F3+F#5:0.5 F2+C3+F3+B5:0.5 F2+C3+F3+A5:0.5 F2+C3+F3+G5:0.5 F2+C3+F3+A5:0.5 F2+C3+F3+G5:0.5 F2+C3+F3+E5:1 ' +
+      'B2+F#3+B3+F#5:0.5 B2+F#3+B3+B5:0.5 B2+F#3+B3+A5:0.5 B2+F#3+B3+G5:0.5 B2+F#3+B3+A5:0.5 B2+F#3+B3+G5:0.5 B2+F#3+B3+E5:1 ' +
+      // VERSE 2 (E · G#m · F#m · D ×2)
+      'E2+B2+E3+F#5:0.5 E2+B2+E3+B5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+E5:1 ' +
+      'G#2+D#3+G#3+F#5:0.5 G#2+D#3+G#3+B5:0.5 G#2+D#3+G#3+A5:0.5 G#2+D#3+G#3+G5:0.5 G#2+D#3+G#3+A5:0.5 G#2+D#3+G#3+G5:0.5 G#2+D#3+G#3+E5:1 ' +
+      'F#2+C#3+F#3+F#5:0.5 F#2+C#3+F#3+B5:0.5 F#2+C#3+F#3+A5:0.5 F#2+C#3+F#3+G5:0.5 F#2+C#3+F#3+A5:0.5 F#2+C#3+F#3+G5:0.5 F#2+C#3+F#3+E5:1 ' +
+      'D2+A2+D3+F#5:0.5 D2+A2+D3+B5:0.5 D2+A2+D3+A5:0.5 D2+A2+D3+G5:0.5 D2+A2+D3+A5:0.5 D2+A2+D3+G5:0.5 D2+A2+D3+E5:1 ' +
+      'E2+B2+E3+F#5:0.5 E2+B2+E3+B5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+E5:1 ' +
+      'G#2+D#3+G#3+F#5:0.5 G#2+D#3+G#3+B5:0.5 G#2+D#3+G#3+A5:0.5 G#2+D#3+G#3+G5:0.5 G#2+D#3+G#3+A5:0.5 G#2+D#3+G#3+G5:0.5 G#2+D#3+G#3+E5:1 ' +
+      'F#2+C#3+F#3+F#5:0.5 F#2+C#3+F#3+B5:0.5 F#2+C#3+F#3+A5:0.5 F#2+C#3+F#3+G5:0.5 F#2+C#3+F#3+A5:0.5 F#2+C#3+F#3+G5:0.5 F#2+C#3+F#3+E5:1 ' +
+      'D2+A2+D3+F#5:0.5 D2+A2+D3+B5:0.5 D2+A2+D3+A5:0.5 D2+A2+D3+G5:0.5 D2+A2+D3+A5:0.5 D2+A2+D3+G5:0.5 D2+A2+D3+E5:1 ' +
+      // CHORUS 2 (Em · Am · F · B7 ×2)
+      'E2+B2+E3+F#5:0.5 E2+B2+E3+B5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+E5:1 ' +
+      'A2+E3+A3+F#5:0.5 A2+E3+A3+B5:0.5 A2+E3+A3+A5:0.5 A2+E3+A3+G5:0.5 A2+E3+A3+A5:0.5 A2+E3+A3+G5:0.5 A2+E3+A3+E5:1 ' +
+      'F2+C3+F3+F#5:0.5 F2+C3+F3+B5:0.5 F2+C3+F3+A5:0.5 F2+C3+F3+G5:0.5 F2+C3+F3+A5:0.5 F2+C3+F3+G5:0.5 F2+C3+F3+E5:1 ' +
+      'B2+F#3+B3+F#5:0.5 B2+F#3+B3+B5:0.5 B2+F#3+B3+A5:0.5 B2+F#3+B3+G5:0.5 B2+F#3+B3+A5:0.5 B2+F#3+B3+G5:0.5 B2+F#3+B3+E5:1 ' +
+      'E2+B2+E3+F#5:0.5 E2+B2+E3+B5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+E5:1 ' +
+      'A2+E3+A3+F#5:0.5 A2+E3+A3+B5:0.5 A2+E3+A3+A5:0.5 A2+E3+A3+G5:0.5 A2+E3+A3+A5:0.5 A2+E3+A3+G5:0.5 A2+E3+A3+E5:1 ' +
+      'F2+C3+F3+F#5:0.5 F2+C3+F3+B5:0.5 F2+C3+F3+A5:0.5 F2+C3+F3+G5:0.5 F2+C3+F3+A5:0.5 F2+C3+F3+G5:0.5 F2+C3+F3+E5:1 ' +
+      'B2+F#3+B3+F#5:0.5 B2+F#3+B3+B5:0.5 B2+F#3+B3+A5:0.5 B2+F#3+B3+G5:0.5 B2+F#3+B3+A5:0.5 B2+F#3+B3+G5:0.5 B2+F#3+B3+E5:1 ' +
+      // OUTRO (E · G#m · F#m · D) — settles, ends on a big held E chord
+      'E2+B2+E3+F#5:0.5 E2+B2+E3+B5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+E5:1 ' +
+      'G#2+D#3+G#3+F#5:0.5 G#2+D#3+G#3+B5:0.5 G#2+D#3+G#3+A5:0.5 G#2+D#3+G#3+G5:0.5 G#2+D#3+G#3+A5:0.5 G#2+D#3+G#3+G5:0.5 G#2+D#3+G#3+E5:1 ' +
+      'F#2+C#3+F#3+F#5:0.5 F#2+C#3+F#3+B5:0.5 F#2+C#3+F#3+A5:0.5 F#2+C#3+F#3+G5:0.5 F#2+C#3+F#3+A5:0.5 F#2+C#3+F#3+G5:0.5 F#2+C#3+F#3+E5:1 ' +
+      'D2+A2+D3+F#5:0.5 D2+A2+D3+B5:0.5 D2+A2+D3+A5:0.5 D2+A2+D3+G5:0.5 D2+A2+D3+A5:0.5 D2+A2+D3+G5:0.5 D2+A2+D3+E5:4'
   }
 ];
 
@@ -762,8 +797,62 @@ function renderSamples() {
     card.querySelector('.sample-play').addEventListener('click', () => {
       player.current === s.id ? stopSample() : playSample(s);
     });
+    // build the inverted overlay text (flips to the opposite colour only where
+    // the progress bar has covered it — clipped, so it's progressive)
+    buildProgOverlays(card);
     list.appendChild(card);
+    // the overlays need the card to be laid out before we can position them
+    positionProgOverlays(card);
   });
+}
+
+// For each text cell, add an invisible copy that shows the OPPOSITE colour
+// and gets clipped to the progress bar region as it grows.
+function buildProgOverlays(card) {
+  const overlays = [];
+  for (const sel of ['.sample-num', '.sample-name', '.sample-dur']) {
+    const src = card.querySelector(sel);
+    if (!src) continue;
+    const o = document.createElement('span');
+    o.className = sel.slice(1) + ' sample-filltext';
+    o.setAttribute('aria-hidden', 'true');
+    // copy children so the name keeps title + artist layout
+    for (const child of src.children) o.appendChild(child.cloneNode(true));
+    card.appendChild(o);
+    overlays.push({ src, o });
+  }
+  card._overlays = overlays;
+  positionProgOverlays(card);
+}
+
+// Lay each overlay exactly over its source cell (layout is static, so this
+// only needs to run once per render; the grid columns are fixed).
+function positionProgOverlays(card) {
+  const cr = card.getBoundingClientRect();
+  const border = parseFloat(getComputedStyle(card).borderLeftWidth) || 0;
+  for (const { src, o } of (card._overlays || [])) {
+    const r = src.getBoundingClientRect();
+    o.style.left = (r.left - cr.left - border) + 'px';
+    o.style.top = (r.top - cr.top - border) + 'px';
+    o.style.width = r.width + 'px';
+    o.style.height = r.height + 'px';
+    o.style.lineHeight = getComputedStyle(src).lineHeight;
+    o.style.clipPath = 'inset(0 100% 0 0)'; // hidden until the bar reaches it
+  }
+}
+
+// Progress pct (0..1): reveal each overlay only over the part the bar covers.
+function updateProgOverlays(card, pct) {
+  if (!card._overlays) return;
+  const w = card.offsetWidth;
+  const edge = pct * w;
+  for (const { o } of card._overlays) {
+    // the overlay's left edge (relative to the card) was stored when laid out
+    const x = parseFloat(o.style.left) || 0;
+    const ew = o.offsetWidth;
+    const vis = Math.max(0, Math.min(ew, edge - x));
+    o.style.clipPath = `inset(0 ${ew - vis}px 0 0)`;
+  }
 }
 
 function playSample(s) {
@@ -794,12 +883,14 @@ function playSample(s) {
     player.card = card;
     const fill = card.querySelector('.sample-fill');
     fill.style.transform = 'scaleX(0)';
+    updateProgOverlays(card, 0);
     player.start = performance.now();
     player.total = total * 1000;
     const tick = (now) => {
       if (!player.card) { player.fillTimer = null; return; }
       const pct = Math.min(1, (now - player.start) / player.total);
       player.card.querySelector('.sample-fill').style.transform = `scaleX(${pct})`;
+      updateProgOverlays(player.card, pct);
       if (pct < 1) {
         player.fillTimer = requestAnimationFrame(tick);
       } else {
@@ -817,6 +908,7 @@ function stopSample() {
   if (player.card) {
     const fill = player.card.querySelector('.sample-fill');
     if (fill) fill.style.transform = 'scaleX(0)';
+    updateProgOverlays(player.card, 0);
     player.card = null;
   }
   player.current = null;

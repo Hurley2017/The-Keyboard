@@ -574,30 +574,6 @@ main {
   color: var(--text);
 }
 
-.sample-table {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.sample-head {
-  background: transparent;
-  border-color: transparent;
-  padding-bottom: 2px;
-  cursor: default;
-}
-.sample-head:hover { border-color: transparent; }
-.sample-head .sample-title,
-.sample-head .sample-artist,
-.sample-head .sample-dur {
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
 .sample-list {
   display: flex;
   flex-direction: column;
@@ -607,8 +583,7 @@ main {
   overflow-y: auto;
 }
 
-.sample-card,
-.sample-head {
+.sample-card {
   position: relative;
   overflow: hidden;
   display: grid;
@@ -622,14 +597,23 @@ main {
   width: 100%;
 }
 
-.sample-card:hover { border-color: var(--text); }
+.sample-card.playing { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
+
+/* text sits above the card but below the fill + inverted overlay */
+.sample-card > .sample-num,
+.sample-card > .sample-name,
+.sample-card > .sample-dur,
+.sample-card > .sample-play { position: relative; z-index: 1; }
+
+/* play/stop button stays clickable above the fill layer */
+.sample-card.playing .sample-play { z-index: 3; }
 
 /* progress + opposite-colour fill while a cover plays (grows left to right) */
 /* solid theme colour — pure white in dark mode, pure black in light mode */
 .sample-fill {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 2;
   background: var(--text); /* white in dark mode, black in light mode */
   transform: scaleX(0);
   transform-origin: left center;
@@ -637,38 +621,41 @@ main {
   will-change: transform;
 }
 
-.sample-card.playing { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
-
-/* text sits above the fill; inverts to the opposite colour when the solid
-   fill covers the row so it stays legible */
-.sample-card > .sample-num,
-.sample-card > .sample-name,
-.sample-card > .sample-dur,
-.sample-card > .sample-play { position: relative; z-index: 1; }
-
-.sample-card.playing > .sample-num,
-.sample-card.playing > .sample-name,
-.sample-card.playing > .sample-dur,
-.sample-card.playing .sample-play { color: var(--bg); }
-.sample-card.playing .sample-artist { color: var(--bg); opacity: 0.75; }
-
-/* the play/stop button inverts solid over the fill so it stays crisp */
-.sample-card.playing .sample-play {
-  background: var(--bg);
-  border-color: var(--bg);
-  color: var(--text);
+/* inverted overlay text: sits on top of the fill and is clipped to the bar
+   region as it grows, so ONLY the covered text flips to the opposite colour,
+   progressively and dynamically. */
+.sample-card > .sample-filltext {
+  position: absolute;
+  z-index: 2;
+  color: var(--bg);
+  white-space: nowrap;
+  overflow: hidden;
+  pointer-events: none;
+  will-change: clip-path;
+  text-overflow: ellipsis;
 }
-.sample-card.playing .sample-play:hover {
-  background: var(--bg);
-  border-color: var(--bg);
-  color: var(--text);
-}
+.sample-filltext.sample-num { font-family: var(--font-mono); font-size: 10px; }
+.sample-filltext.sample-dur { font-family: var(--font-mono); font-size: 10px; text-align: right; }
 
-.sample-num {
+.sample-filltext.sample-name {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.sample-filltext .sample-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sample-filltext .sample-artist {
   font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--muted);
+  font-size: 10.5px;
+  color: var(--bg);
+  letter-spacing: 0.5px;
+  flex: 0 0 auto;
 }
+.sample-filltext .sample-artist::before { content: ": "; }
 
 /* "Cover Name : Artist" on one line, roomy but truncating cleanly */
 .sample-name {
