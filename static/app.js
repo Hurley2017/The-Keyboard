@@ -670,150 +670,35 @@ function showConflicts() {
 
 /* ============ Famous piano covers ============ */
 
+// Single cover for now: Shinunoga E-Wa by Fujii Kaze.
+// Key of E — verse E·G#m·F#m·D (E major), chorus Em·Am·F·B7 (E minor).
+// Real solo-piano feel: LH walks root–fifth on every beat under the RH,
+// which carries the iconic F#·B·A·G·A·G·E hook riff (verified against
+// chord charts + letter-note transcriptions).
 const SAMPLES = [
   {
-    id: 'fur-elise', title: 'Für Elise', composer: 'Beethoven', bpm: 104,
+    id: 'shinunoga', title: 'Shinunoga E-Wa', composer: 'Fujii Kaze', bpm: 80,
     data:
-      'E5:0.5 D#5:0.5 E5:0.5 D#5:0.5 E5:0.5 B4:0.5 D5:0.5 C5:0.5 A4:2 R:1 ' +
-      'C4:0.5 E4:0.5 A4:0.5 B4:2 R:1 E4:0.5 G#4:0.5 B4:0.5 C5:2 R:1 ' +
-      'E4:0.5 E5:0.5 D#5:0.5 E5:0.5 D#5:0.5 E5:0.5 B4:0.5 D5:0.5 C5:0.5 A4:2 R:1 ' +
-      'C4:0.5 E4:0.5 A4:0.5 B4:2 R:1 E4:0.5 C5:0.5 B4:0.5 A4:2'
-  },
-  {
-    id: 'moonlight', title: 'Moonlight Sonata', composer: 'Beethoven', bpm: 90,
-    data:
-      'C#3:24 C#4+E4+G#4:1 C#5:0.5 E5:0.5 G#5:0.5 C#5:0.5 E5:0.5 G#5:0.5 ' +
-      'B3+D#4+F#4:1 B4:0.5 E5:0.5 G#5:0.5 B4:0.5 E5:0.5 G#5:0.5 ' +
-      'A3+C#4+E4:1 A4:0.5 E5:0.5 C#5:0.5 A4:0.5 E5:0.5 C#5:0.5 ' +
-      'G#3+B3+D#4:1 G#4:0.5 B4:0.5 E5:0.5 G#4:0.5 B4:0.5 E5:0.5'
-  },
-  {
-    id: 'canon', title: 'Canon in D', composer: 'Pachelbel', bpm: 96,
-    data:
-      'D3:1 A3:1 B3:1 F#3:1 G3:1 D3:1 G3:1 A3:2 ' +
-      'D4:2 F#4:1 D4:1 A4:1 D5:2 A3:1 F#4:1 D5:1 F#5:2 ' +
-      'G3:2 B4:1 G4:1 D5:1 G5:2 D3:1 G3:1 B3:1 D4:1 ' +
-      'A2+A3:4 E5:1 C#5:1 A4:1 E5:1 A5:2'
-  },
-  {
-    id: 'comptine', title: "Comptine d'un autre été", composer: 'Yann Tiersen', bpm: 118,
-    data:
-      'A2:40 A3:40 E5:0.5 C5:0.5 B4:0.5 A4:0.5 B4:0.5 C5:0.5 E5:0.5 B4:0.5 ' +
-      'A4:0.5 E5:0.5 C5:0.5 B4:0.5 A4:0.5 B4:0.5 C5:0.5 E5:0.5 B4:0.5 ' +
-      'A4:0.5 E5:0.5 C5:0.5 B4:0.5 A4:0.5 B4:0.5 C5:0.5 E5:0.5 C5:0.5 ' +
-      'D5:0.5 C5:0.5 B4:0.5 A4:0.5 B4:0.5 C5:0.5 B4:0.5 A4:0.5 ' +
-      'A4:0.5 E5:0.5 C5:0.5 B4:0.5 A4:0.5 B4:0.5 C5:0.5 E5:0.5'
-  },
-  {
-    id: 'interstellar', title: 'Interstellar (Main Theme)', composer: 'Hans Zimmer', bpm: 66,
-    data:
-      'D3:24 A3:0.5 C4:0.5 D4:2 A3:0.5 C4:0.5 D4:2 R:1 ' +
-      'A3:0.5 C4:0.5 D4:2 F4:2 D4:1 F4:1 E4:1 D4:2 R:1 ' +
-      'A3:0.5 C4:0.5 D4:2 R:1 D4:1 F4:1 E4:1 D4:3'
-  },
-  {
-    id: 'clair-de-lune', title: 'Clair de Lune', composer: 'Debussy', bpm: 68,
-    data:
-      'D#4:2 A#4:1 D#5:1 F5:1 A#5:3 R:1 D#5:1 F5:1 A#5:1 D#6:3 R:1 ' +
-      'C#5:2 F5:1 A#5:1 C#6:2 R:1 C5:2 G#5:1 C6:1 A#5:2 R:1 D#5:1 F5:1 A#5:1 D#6:4'
-  },
-  {
-    id: 'river-flows', title: 'River Flows in You', composer: 'Yiruma', bpm: 100,
-    data:
-      'G#4:2 B4:1 C#5:1 D#5:1 C#5:1 B4:1 G#4:2 E4:1 C#4:1 D#4:2 B3:1 G#3:1 ' +
-      'A3:1 B3:1 C#4:1 D#4:1 E4:1 G#4:1 B4:1 G#4:2 E4:1 C#4:1 D#4:3'
-  },
-  {
-    id: 'nuvole-bianche', title: 'Nuvole Bianche', composer: 'Ludovico Einaudi', bpm: 96,
-    data:
-      'A3:2 E4:1 A4:1 C5:1 E5:1 C5:1 A4:1 A3:2 E4:1 A4:1 C5:1 E5:1 G5:1 E5:1 ' +
-      'C5:1 B4:1 E4:1 G4:1 B4:1 D5:1 B4:1 G4:1 A4:2 E4:1 C#4:1 E4:1 A4:2'
-  },
-  {
-    id: 'gymnopedie', title: 'Gymnopédie No. 1', composer: 'Erik Satie', bpm: 76,
-    data:
-      'G4:2 D5:1 D#5:1 E5:2 G5:1 F#5:1 D#5:1 E5:2 G4:2 D5:1 D#5:1 E5:2 G5:1 A5:1 G5:1 F#5:1 E5:2'
-  },
-  {
-    id: 'hallelujah', title: 'Hallelujah', composer: 'Leonard Cohen', bpm: 72,
-    data:
-      'C5:2 G4:1 E4:1 C4:1 D4:1 F4:1 G4:1 A4:1 C5:1 B4:1 A4:1 G4:1 E4:1 D4:1 ' +
-      'G4:2 F4:1 E4:1 D4:2 C4:1 D4:1 E4:1 F4:1 G4:2'
-  },
-  {
-    id: 'all-of-me', title: 'All of Me', composer: 'John Legend', bpm: 76,
-    data:
-      'A4:1 B4:1 C5:1 D5:1 E5:2 C5:1 B4:1 A4:2 G#4:1 A4:1 B4:1 C5:1 D5:2 ' +
-      'A4:1 B4:1 C5:1 D5:1 E5:2 C5:1 D5:1 E5:4'
-  },
-  {
-    id: 'imagine', title: 'Imagine', composer: 'John Lennon', bpm: 76,
-    data:
-      'C5:2 E5:1 G5:1 E5:1 D5:1 C5:1 D5:1 E5:1 D5:2 C5:1 B4:1 A4:1 ' +
-      'C5:2 G4:1 C5:1 E5:1 D5:1 C5:1 D5:1 E5:2'
-  },
-  {
-    id: 'bohemian', title: 'Bohemian Rhapsody (Intro)', composer: 'Queen', bpm: 76,
-    data:
-      'D3:0.5 Eb3:0.5 F3:0.5 G3:0.5 A3:1 B3:1 C4:1 D4:0.5 Eb4:0.5 F4:1.5 Eb4:0.5 D4:1 C4:1 ' +
-      'Bb3:1 C4:1 D4:1 Eb4:1 F4:1 G4:2 F4:1 Eb4:1 D4:1 C4:1'
-  },
-  {
-    id: 'let-it-be', title: 'Let It Be', composer: 'The Beatles', bpm: 72,
-    data:
-      'E5:1 D5:1 C5:1 B4:1 C5:1 B4:1 A4:1 G4:2 A4:1 B4:1 C5:1 D5:1 E5:1 D5:1 C5:2 ' +
-      'B4:1 C5:1 D5:1 E5:1 G5:1 E5:1 D5:2'
-  },
-  {
-    id: 'someone-like-you', title: 'Someone Like You', composer: 'Adele', bpm: 72,
-    data:
-      'A4:1 C#5:1 D5:1 E5:2 C#5:1 A4:1 B4:2 C#5:1 D5:1 E5:1 G5:1 F#5:2 E5:1 D5:1 ' +
-      'C#5:2 B4:1 C#5:1 D5:1 C#5:1 A4:2'
-  },
-  {
-    id: 'perfect', title: 'Perfect', composer: 'Ed Sheeran', bpm: 80,
-    data:
-      'D5:1 A4:1 B4:1 C#5:1 D5:1 E5:1 F#5:1 E5:1 D5:2 C#5:1 B4:1 A4:1 F#4:1 ' +
-      'G4:1 A4:1 B4:1 C#5:1 D5:2'
-  },
-  {
-    id: 'marriage-damour', title: "Marriage d'Amour", composer: 'Paul de Senneville', bpm: 92,
-    data:
-      'E5:1 G#5:1 B5:1 C#6:1 B5:1 A5:1 G#5:1 A5:1 B5:2 G#5:1 E5:1 G#5:1 B5:2 A5:1 G#5:1 ' +
-      'F#5:1 E5:1 D#5:1 E5:1 F#5:1 G#5:2'
-  },
-  {
-    id: 'nocturne', title: 'Nocturne Op. 9 No. 2', composer: 'Frédéric Chopin', bpm: 80,
-    data:
-      'E5:1.5 D#5:0.5 E5:1 B4:0.5 D5:0.5 E5:1 G#5:0.5 C#6:0.5 D6:1 B5:0.5 A5:0.5 G#5:1 E5:0.5 G#5:0.5 ' +
-      'B5:1 A5:0.5 F#5:0.5 G#5:2'
-  },
-  {
-    id: 'clocks', title: 'Clocks', composer: 'Coldplay', bpm: 104,
-    data:
-      'G3:1.5 B3:0.5 C4:0.5 D4:0.5 C4:0.5 B3:0.5 G3:0.5 E3:2 R:1 ' +
-      'G3:1.5 B3:0.5 C4:0.5 D4:0.5 C4:0.5 B3:0.5 G3:0.5 E3:2 R:1 ' +
-      'G3:1.5 B3:0.5 C4:0.5 D4:0.5 C4:0.5 B3:0.5 E3:2'
-  },
-  {
-    id: 'shinunoga', title: 'Shinunoga E-Wa', composer: 'Fujii Kaze', bpm: 78,
-    data:
-      // F#m – D – A – E loop: gentle arpeggiated verse-style line, then a
-      // fuller chorus pass. Bass roots + soft chord tones, staying in range.
-      'F#3+A3+C#4+E4:3 A3+C#4+E4:1 ' +
-      'D3+A3+D4+F#4:3 A3+D4+F#4:1 ' +
-      'A2+E3+A3+C#4:3 E3+A3+C#4:1 ' +
-      'E3+G#3+B3+E4:3 G#3+B3+E4:1 ' +
-      'F#3+A3+C#4+E4:3 A3+C#4+E4:1 ' +
-      'D3+A3+D4+F#4:3 A3+D4+F#4:1 ' +
-      'A2+E3+A3+C#4:3 E3+A3+C#4:1 ' +
-      'E3+G#3+B3+E4:2 R:1'
-  },
-  {
-    id: 'merry-go-round', title: "Merry-Go-Round of Life", composer: 'Joe Hisaishi', bpm: 96,
-    data:
-      'C5:1 E5:1 G5:1 C6:1 G5:1 E5:1 C5:2 G4:2 C5:1 E5:1 G5:1 D6:1 G5:1 D5:1 B4:2 G4:2 ' +
-      'A4:1 C5:1 E5:1 A5:1 E5:1 C5:1 A4:2 F4:2'
+      // INTRO — the hook riff, one bar per chord (E · G#m · F#m · D)
+      'E2+F#5:0.5 B2+B5:0.5 E2+A5:0.5 B2+G5:0.5 E2+A5:0.5 B2+G5:0.5 E2+E5:1 ' +
+      'G#2+A5:0.5 D#3+B5:0.5 G#2+A5:0.5 D#3+G5:0.5 G#2+A5:0.5 D#3+G5:0.5 G#2+E5:1 ' +
+      'F#2+F#5:0.5 C#3+B5:0.5 F#2+A5:0.5 C#3+G5:0.5 F#2+A5:0.5 C#3+G5:0.5 F#2+E5:1 ' +
+      'D3+A5:0.5 A3+B5:0.5 D3+A5:0.5 A3+G5:0.5 D3+A5:0.5 A3+G5:0.5 D3+E5:1 ' +
+      // VERSE — same riff, fuller octave bass to lift it
+      'E2+E3+F#5:0.5 B2+B3+B5:0.5 E2+E3+A5:0.5 B2+B3+G5:0.5 E2+E3+A5:0.5 B2+B3+G5:0.5 E2+E3+E5:1 ' +
+      'G#2+G#3+A5:0.5 D#3+D#4+B5:0.5 G#2+G#3+A5:0.5 D#3+D#4+G5:0.5 G#2+G#3+A5:0.5 D#3+D#4+G5:0.5 G#2+G#3+E5:1 ' +
+      'F#2+F#3+F#5:0.5 C#3+C#4+B5:0.5 F#2+F#3+A5:0.5 C#3+C#4+G5:0.5 F#2+F#3+A5:0.5 C#3+C#4+G5:0.5 F#2+F#3+E5:1 ' +
+      'D3+D4+A5:0.5 A3+A4+B5:0.5 D3+D4+A5:0.5 A3+A4+G5:0.5 D3+D4+A5:0.5 A3+A4+G5:0.5 D3+D4+E5:1 ' +
+      // CHORUS — Em · Am · F · B7, same riff with the minor-colour bass
+      'E2+E3+F#5:0.5 B2+B3+B5:0.5 E2+E3+A5:0.5 B2+B3+G5:0.5 E2+E3+A5:0.5 B2+B3+G5:0.5 E2+E3+E5:1 ' +
+      'A2+A3+A5:0.5 E3+E4+B5:0.5 A2+A3+A5:0.5 E3+E4+G5:0.5 A2+A3+A5:0.5 E3+E4+G5:0.5 A2+A3+E5:1 ' +
+      'F2+F3+F#5:0.5 C3+C4+B5:0.5 F2+F3+A5:0.5 C3+C4+G5:0.5 F2+F3+A5:0.5 C3+C4+G5:0.5 F2+F3+E5:1 ' +
+      'B2+B3+F#5:0.5 F#3+F#4+B5:0.5 B2+B3+A5:0.5 F#3+F#4+G5:0.5 B2+B3+A5:0.5 F#3+F#4+G5:0.5 B2+B3+E5:1 ' +
+      // VERSE 2 — back to the major-key round
+      'E2+E3+F#5:0.5 B2+B3+B5:0.5 E2+E3+A5:0.5 B2+B3+G5:0.5 E2+E3+A5:0.5 B2+B3+G5:0.5 E2+E3+E5:1 ' +
+      'G#2+G#3+A5:0.5 D#3+D#4+B5:0.5 G#2+G#3+A5:0.5 D#3+D#4+G5:0.5 G#2+G#3+A5:0.5 D#3+D#4+G5:0.5 G#2+G#3+E5:1 ' +
+      'F#2+F#3+F#5:0.5 C#3+C#4+B5:0.5 F#2+F#3+A5:0.5 C#3+C#4+G5:0.5 F#2+F#3+A5:0.5 C#3+C#4+G5:0.5 F#2+F#3+E5:1 ' +
+      'D3+D4+A5:0.5 A3+A4+B5:0.5 D3+D4+A5:0.5 A3+A4+G5:0.5 D3+D4+A5:0.5 A3+A4+G5:0.5 D3+D4+E5:2'
   }
 ];
 

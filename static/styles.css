@@ -574,6 +574,30 @@ main {
   color: var(--text);
 }
 
+.sample-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sample-head {
+  background: transparent;
+  border-color: transparent;
+  padding-bottom: 2px;
+  cursor: default;
+}
+.sample-head:hover { border-color: transparent; }
+.sample-head .sample-title,
+.sample-head .sample-artist,
+.sample-head .sample-dur {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 .sample-list {
   display: flex;
   flex-direction: column;
@@ -581,14 +605,14 @@ main {
   /* exactly ~5 rows visible, then it scrolls */
   max-height: 280px;
   overflow-y: auto;
-  padding-right: 6px;
 }
 
-.sample-card {
+.sample-card,
+.sample-head {
   position: relative;
   overflow: hidden;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: 34px minmax(0, 1fr) 90px 96px;
   align-items: center;
   gap: 14px;
   padding: 10px 12px 10px 14px;
@@ -601,12 +625,12 @@ main {
 .sample-card:hover { border-color: var(--text); }
 
 /* progress + opposite-colour fill while a cover plays (grows left to right) */
+/* solid theme colour — pure white in dark mode, pure black in light mode */
 .sample-fill {
   position: absolute;
   inset: 0;
   z-index: 0;
   background: var(--text); /* white in dark mode, black in light mode */
-  opacity: 0.14;
   transform: scaleX(0);
   transform-origin: left center;
   pointer-events: none;
@@ -615,10 +639,30 @@ main {
 
 .sample-card.playing { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
 
+/* text sits above the fill; inverts to the opposite colour when the solid
+   fill covers the row so it stays legible */
 .sample-card > .sample-num,
 .sample-card > .sample-name,
 .sample-card > .sample-dur,
 .sample-card > .sample-play { position: relative; z-index: 1; }
+
+.sample-card.playing > .sample-num,
+.sample-card.playing > .sample-name,
+.sample-card.playing > .sample-dur,
+.sample-card.playing .sample-play { color: var(--bg); }
+.sample-card.playing .sample-artist { color: var(--bg); opacity: 0.75; }
+
+/* the play/stop button inverts solid over the fill so it stays crisp */
+.sample-card.playing .sample-play {
+  background: var(--bg);
+  border-color: var(--bg);
+  color: var(--text);
+}
+.sample-card.playing .sample-play:hover {
+  background: var(--bg);
+  border-color: var(--bg);
+  color: var(--text);
+}
 
 .sample-num {
   font-family: var(--font-mono);
