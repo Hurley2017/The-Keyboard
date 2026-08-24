@@ -742,7 +742,7 @@ const player = {
   total: 0,        // total duration (seconds)
   cursor: 0,       // current playhead time (seconds)
   noteIdx: 0,      // index of the next note to trigger
-  activeNotes: new Map(), // midi -> voiceId currently ringing
+  activeNotes: new Map(), // midi -> count of currently-ringing notes (overlaps)
   card: null,      // the sample-card element being played
   t0: 0,           // performance.now() baseline for the playhead
   fillTimer: null, // rAF id for the master loop
@@ -907,7 +907,7 @@ function playSample(s) {
   player.playing = true;
   player.pausedAt = 0;
   player.noteIdx = 0;
-  player.activeNotes = new Map(); // midi -> voiceId
+  player.activeNotes = new Map(); // midi -> count of ringing notes
   setStatus(`Now playing — ${s.title} (${s.composer})`);
   engine.ensure();
 
@@ -930,7 +930,7 @@ function pauseSample() {
   player.playing = false;
   player.pausedAt = player.cursor;
   // cut all currently sounding cover notes so nothing hangs mid-pause
-  for (const [midi, vid] of player.activeNotes) engine.noteOff(midi, vid);
+  for (const midi of player.activeNotes.keys()) engine.noteOff(midi);
   player.activeNotes.clear();
   if (player.fillTimer != null) { cancelAnimationFrame(player.fillTimer); player.fillTimer = null; }
   updateSampleButtons();
@@ -955,7 +955,7 @@ function stopSample() {
     player.card = null;
   }
   // release any cover voices that are still ringing
-  for (const [midi, vid] of player.activeNotes) engine.noteOff(midi, vid);
+  for (const midi of player.activeNotes.keys()) engine.noteOff(midi);
   player.activeNotes = new Map();
   player.current = null;
   player.playing = false;
@@ -974,7 +974,7 @@ function seekSample(frac) {
   if (!player.current) return;
   const t = Math.max(0, Math.min(1, frac)) * player.total;
   // stop any currently ringing notes
-  for (const [midi, vid] of player.activeNotes) engine.noteOff(midi, vid);
+  for (const midi of player.activeNotes.keys()) engine.noteOff(midi);
   player.activeNotes.clear();
   player.cursor = t;
   player.noteIdx = 0;
@@ -1003,20 +1003,28 @@ function playerLoop(now) {
     const ev = evs[player.noteIdx];
     if (player.current && ev.time + ev.dur > cursor) {
       engine.ensure();
-      const voiceId = engine.noteOn(ev.midi);
-      player.activeNotes.set(ev.midi, voiceId);
+      engine.noteOn(ev.midi);
       pressVisual(ev.midi, true);
       spawnNoteAt(ev.midi);
+      // count overlapping notes per midi so the key stays pressed until the
+      // LAST note with this pitch actually ends
+      player.activeNotes.set(ev.midi, (player.activeNotes.get(ev.midi) || 0) + 1);
     }
     player.noteIdx++;
   }
   // release notes whose window has passed
   for (let i = player.noteIdx - 1; i >= 0; i--) {
     const ev = evs[i];
-    if (player.activeNotes.has(ev.midi) && ev.time + ev.dur <= cursor) {
-      engine.noteOff(ev.midi, player.activeNotes.get(ev.midi));
-      player.activeNotes.delete(ev.midi);
-      pressVisual(ev.midi, false);
+    const count = player.activeNotes.get(ev.midi);
+    if (count && ev.time + ev.dur <= cursor) {
+      const next = count - 1;
+      if (next <= 0) {
+        engine.noteOff(ev.midi);
+        player.activeNotes.delete(ev.midi);
+        pressVisual(ev.midi, false);
+      } else {
+        player.activeNotes.set(ev.midi, next);
+      }
     }
   }
 
