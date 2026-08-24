@@ -685,6 +685,12 @@ main {
 
 .sample-artist::before { content: ": "; }
 
+.sample-num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+}
+
 .sample-dur {
   font-family: var(--font-mono);
   font-size: 10px;

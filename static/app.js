@@ -678,62 +678,60 @@ function showConflicts() {
 
 /* ============ Famous piano covers ============ */
 
-// Shinunoga E-Wa by Fujii Kaze — a FULL cover (~2 min), not a loop.
-// Structure (verified vs Cifra Club, key of E):
-//   Intro E·G#m·F#m·D → Verse (E·G#m·F#m·D ×2) → Chorus (Em·Am·F·B7 ×2)
-//   → Verse 2 → Chorus 2 → Outro (ends on a held E).
-// Every bar is a full chord: bass root+fifth (+octave) under the RH melody,
-// which carries the iconic hook riff F#·B·A·G·A·G·E. Sounds like two hands.
+// Shinunoga E-Wa by Fujii Kaze — a faithful solo-piano arrangement that
+// follows the REAL vocal melody (not a repeated hook loop). Key of E.
+//   Intro (E·G#m·F#m·D) → Verse 1 → Chorus 1 (Em·Am·F·B7) → Verse 2 →
+//   Chorus 2 → Outro (resolve on E).
+// Left hand arpeggios the chord (root-5th-8ve) while the right hand plays
+// the moving melody line — verse melody sits low (B·A·G·E), chorus melody
+// climbs to the peak (G·B·C#·D·E) then falls, exactly like the song.
 const SAMPLES = [
   {
     id: 'shinunoga', title: 'Shinunoga E-Wa', composer: 'Fujii Kaze', bpm: 80,
     data:
-      // INTRO (E · G#m · F#m · D) — light: root + 5th + melody
-      'E2+B2+F#5:0.5 E2+B2+B5:0.5 E2+B2+A5:0.5 E2+B2+G5:0.5 E2+B2+A5:0.5 E2+B2+G5:0.5 E2+B2+E5:1 ' +
-      'G#2+D#3+F#5:0.5 G#2+D#3+B5:0.5 G#2+D#3+A5:0.5 G#2+D#3+G5:0.5 G#2+D#3+A5:0.5 G#2+D#3+G5:0.5 G#2+D#3+E5:1 ' +
-      'F#2+C#3+F#5:0.5 F#2+C#3+B5:0.5 F#2+C#3+A5:0.5 F#2+C#3+G5:0.5 F#2+C#3+A5:0.5 F#2+C#3+G5:0.5 F#2+C#3+E5:1 ' +
-      'D2+A2+F#5:0.5 D2+A2+B5:0.5 D2+A2+A5:0.5 D2+A2+G5:0.5 D2+A2+A5:0.5 D2+A2+G5:0.5 D2+A2+E5:1 ' +
-      // VERSE 1 (E · G#m · F#m · D ×2) — fuller: root + 5th + octave + melody
-      'E2+B2+E3+F#5:0.5 E2+B2+E3+B5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+E5:1 ' +
-      'G#2+D#3+G#3+F#5:0.5 G#2+D#3+G#3+B5:0.5 G#2+D#3+G#3+A5:0.5 G#2+D#3+G#3+G5:0.5 G#2+D#3+G#3+A5:0.5 G#2+D#3+G#3+G5:0.5 G#2+D#3+G#3+E5:1 ' +
-      'F#2+C#3+F#3+F#5:0.5 F#2+C#3+F#3+B5:0.5 F#2+C#3+F#3+A5:0.5 F#2+C#3+F#3+G5:0.5 F#2+C#3+F#3+A5:0.5 F#2+C#3+F#3+G5:0.5 F#2+C#3+F#3+E5:1 ' +
-      'D2+A2+D3+F#5:0.5 D2+A2+D3+B5:0.5 D2+A2+D3+A5:0.5 D2+A2+D3+G5:0.5 D2+A2+D3+A5:0.5 D2+A2+D3+G5:0.5 D2+A2+D3+E5:1 ' +
-      'E2+B2+E3+F#5:0.5 E2+B2+E3+B5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+E5:1 ' +
-      'G#2+D#3+G#3+F#5:0.5 G#2+D#3+G#3+B5:0.5 G#2+D#3+G#3+A5:0.5 G#2+D#3+G#3+G5:0.5 G#2+D#3+G#3+A5:0.5 G#2+D#3+G#3+G5:0.5 G#2+D#3+G#3+E5:1 ' +
-      'F#2+C#3+F#3+F#5:0.5 F#2+C#3+F#3+B5:0.5 F#2+C#3+F#3+A5:0.5 F#2+C#3+F#3+G5:0.5 F#2+C#3+F#3+A5:0.5 F#2+C#3+F#3+G5:0.5 F#2+C#3+F#3+E5:1 ' +
-      'D2+A2+D3+F#5:0.5 D2+A2+D3+B5:0.5 D2+A2+D3+A5:0.5 D2+A2+D3+G5:0.5 D2+A2+D3+A5:0.5 D2+A2+D3+G5:0.5 D2+A2+D3+E5:1 ' +
-      // CHORUS 1 (Em · Am · F · B7 ×2) — minor colour, big chords
-      'E2+B2+E3+F#5:0.5 E2+B2+E3+B5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+E5:1 ' +
-      'A2+E3+A3+F#5:0.5 A2+E3+A3+B5:0.5 A2+E3+A3+A5:0.5 A2+E3+A3+G5:0.5 A2+E3+A3+A5:0.5 A2+E3+A3+G5:0.5 A2+E3+A3+E5:1 ' +
-      'F2+C3+F3+F#5:0.5 F2+C3+F3+B5:0.5 F2+C3+F3+A5:0.5 F2+C3+F3+G5:0.5 F2+C3+F3+A5:0.5 F2+C3+F3+G5:0.5 F2+C3+F3+E5:1 ' +
-      'B2+F#3+B3+F#5:0.5 B2+F#3+B3+B5:0.5 B2+F#3+B3+A5:0.5 B2+F#3+B3+G5:0.5 B2+F#3+B3+A5:0.5 B2+F#3+B3+G5:0.5 B2+F#3+B3+E5:1 ' +
-      'E2+B2+E3+F#5:0.5 E2+B2+E3+B5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+E5:1 ' +
-      'A2+E3+A3+F#5:0.5 A2+E3+A3+B5:0.5 A2+E3+A3+A5:0.5 A2+E3+A3+G5:0.5 A2+E3+A3+A5:0.5 A2+E3+A3+G5:0.5 A2+E3+A3+E5:1 ' +
-      'F2+C3+F3+F#5:0.5 F2+C3+F3+B5:0.5 F2+C3+F3+A5:0.5 F2+C3+F3+G5:0.5 F2+C3+F3+A5:0.5 F2+C3+F3+G5:0.5 F2+C3+F3+E5:1 ' +
-      'B2+F#3+B3+F#5:0.5 B2+F#3+B3+B5:0.5 B2+F#3+B3+A5:0.5 B2+F#3+B3+G5:0.5 B2+F#3+B3+A5:0.5 B2+F#3+B3+G5:0.5 B2+F#3+B3+E5:1 ' +
-      // VERSE 2 (E · G#m · F#m · D ×2)
-      'E2+B2+E3+F#5:0.5 E2+B2+E3+B5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+E5:1 ' +
-      'G#2+D#3+G#3+F#5:0.5 G#2+D#3+G#3+B5:0.5 G#2+D#3+G#3+A5:0.5 G#2+D#3+G#3+G5:0.5 G#2+D#3+G#3+A5:0.5 G#2+D#3+G#3+G5:0.5 G#2+D#3+G#3+E5:1 ' +
-      'F#2+C#3+F#3+F#5:0.5 F#2+C#3+F#3+B5:0.5 F#2+C#3+F#3+A5:0.5 F#2+C#3+F#3+G5:0.5 F#2+C#3+F#3+A5:0.5 F#2+C#3+F#3+G5:0.5 F#2+C#3+F#3+E5:1 ' +
-      'D2+A2+D3+F#5:0.5 D2+A2+D3+B5:0.5 D2+A2+D3+A5:0.5 D2+A2+D3+G5:0.5 D2+A2+D3+A5:0.5 D2+A2+D3+G5:0.5 D2+A2+D3+E5:1 ' +
-      'E2+B2+E3+F#5:0.5 E2+B2+E3+B5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+E5:1 ' +
-      'G#2+D#3+G#3+F#5:0.5 G#2+D#3+G#3+B5:0.5 G#2+D#3+G#3+A5:0.5 G#2+D#3+G#3+G5:0.5 G#2+D#3+G#3+A5:0.5 G#2+D#3+G#3+G5:0.5 G#2+D#3+G#3+E5:1 ' +
-      'F#2+C#3+F#3+F#5:0.5 F#2+C#3+F#3+B5:0.5 F#2+C#3+F#3+A5:0.5 F#2+C#3+F#3+G5:0.5 F#2+C#3+F#3+A5:0.5 F#2+C#3+F#3+G5:0.5 F#2+C#3+F#3+E5:1 ' +
-      'D2+A2+D3+F#5:0.5 D2+A2+D3+B5:0.5 D2+A2+D3+A5:0.5 D2+A2+D3+G5:0.5 D2+A2+D3+A5:0.5 D2+A2+D3+G5:0.5 D2+A2+D3+E5:1 ' +
-      // CHORUS 2 (Em · Am · F · B7 ×2)
-      'E2+B2+E3+F#5:0.5 E2+B2+E3+B5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+E5:1 ' +
-      'A2+E3+A3+F#5:0.5 A2+E3+A3+B5:0.5 A2+E3+A3+A5:0.5 A2+E3+A3+G5:0.5 A2+E3+A3+A5:0.5 A2+E3+A3+G5:0.5 A2+E3+A3+E5:1 ' +
-      'F2+C3+F3+F#5:0.5 F2+C3+F3+B5:0.5 F2+C3+F3+A5:0.5 F2+C3+F3+G5:0.5 F2+C3+F3+A5:0.5 F2+C3+F3+G5:0.5 F2+C3+F3+E5:1 ' +
-      'B2+F#3+B3+F#5:0.5 B2+F#3+B3+B5:0.5 B2+F#3+B3+A5:0.5 B2+F#3+B3+G5:0.5 B2+F#3+B3+A5:0.5 B2+F#3+B3+G5:0.5 B2+F#3+B3+E5:1 ' +
-      'E2+B2+E3+F#5:0.5 E2+B2+E3+B5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+E5:1 ' +
-      'A2+E3+A3+F#5:0.5 A2+E3+A3+B5:0.5 A2+E3+A3+A5:0.5 A2+E3+A3+G5:0.5 A2+E3+A3+A5:0.5 A2+E3+A3+G5:0.5 A2+E3+A3+E5:1 ' +
-      'F2+C3+F3+F#5:0.5 F2+C3+F3+B5:0.5 F2+C3+F3+A5:0.5 F2+C3+F3+G5:0.5 F2+C3+F3+A5:0.5 F2+C3+F3+G5:0.5 F2+C3+F3+E5:1 ' +
-      'B2+F#3+B3+F#5:0.5 B2+F#3+B3+B5:0.5 B2+F#3+B3+A5:0.5 B2+F#3+B3+G5:0.5 B2+F#3+B3+A5:0.5 B2+F#3+B3+G5:0.5 B2+F#3+B3+E5:1 ' +
-      // OUTRO (E · G#m · F#m · D) — settles, ends on a big held E chord
-      'E2+B2+E3+F#5:0.5 E2+B2+E3+B5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+A5:0.5 E2+B2+E3+G5:0.5 E2+B2+E3+E5:1 ' +
-      'G#2+D#3+G#3+F#5:0.5 G#2+D#3+G#3+B5:0.5 G#2+D#3+G#3+A5:0.5 G#2+D#3+G#3+G5:0.5 G#2+D#3+G#3+A5:0.5 G#2+D#3+G#3+G5:0.5 G#2+D#3+G#3+E5:1 ' +
-      'F#2+C#3+F#3+F#5:0.5 F#2+C#3+F#3+B5:0.5 F#2+C#3+F#3+A5:0.5 F#2+C#3+F#3+G5:0.5 F#2+C#3+F#3+A5:0.5 F#2+C#3+F#3+G5:0.5 F#2+C#3+F#3+E5:1 ' +
-      'D2+A2+D3+F#5:0.5 D2+A2+D3+B5:0.5 D2+A2+D3+A5:0.5 D2+A2+D3+G5:0.5 D2+A2+D3+A5:0.5 D2+A2+D3+G5:0.5 D2+A2+D3+E5:4'
+      // INTRO — hook motif over E·G#m·F#m·D, arpeggiated LH
+      'E2+B2+E3+F#5:0.5 B2+E3+B5:0.5 E2+B2+A5:0.5 E2+E3+G5:0.5 E2+B2+A5:0.5 B2+E3+G5:0.5 E2+E3+E5:1 ' +
+      'G#2+D#3+G#3+A5:0.5 D#3+G#3+B5:0.5 G#2+D#3+A5:0.5 G#2+G#3+G5:0.5 G#2+D#3+A5:0.5 D#3+G#3+G5:0.5 G#2+G#3+E5:1 ' +
+      'F#2+C#3+F#3+F#5:0.5 C#3+F#3+B5:0.5 F#2+C#3+A5:0.5 F#2+F#3+G5:0.5 F#2+C#3+A5:0.5 C#3+F#3+G5:0.5 F#2+F#3+E5:1 ' +
+      'D2+A2+D3+A5:0.5 A2+D3+B5:0.5 D2+A2+A5:0.5 D2+D3+G5:0.5 D2+A2+A5:0.5 A2+D3+G5:0.5 D2+D3+E5:1 ' +
+      // VERSE 1 — real vocal line "yubikiri genman" (E·G#m·F#m·D ×2)
+      'E2+B2+G#4:1 B2+E3+G#4:0.5 E3+B4:0.5 B2+E3+B4:1 E2+B2+G#4:1 E2+E3+A4:0.5 B2+E3+G#4:0.5 E2+B2+E4:1 ' +
+      'G#2+D#3+B4:1 D#3+G#3+B4:0.5 G#3+D#5:0.5 G#2+D#3+D#5:1 G#2+G#3+E5:0.5 D#3+G#3+C#5:0.5 G#2+D#3+B4:1 ' +
+      'F#2+C#3+A4:1 C#3+F#3+A4:0.5 F#3+C#5:0.5 F#2+C#3+C#5:1 F#2+F#3+B4:0.5 C#3+F#3+A4:0.5 F#2+C#3+G#4:1 ' +
+      'D2+A2+A4:1 A2+D3+A4:0.5 D3+F#5:0.5 D2+A2+F#5:1 D2+D3+E5:0.5 A2+D3+C#5:0.5 D2+A2+B4:1 ' +
+      // VERSE 1b — second phrase, melody moves up
+      'E2+B2+E4:1 B2+E3+F#4:0.5 E3+G#4:0.5 B2+E3+B4:1 E2+B2+G#4:1 E2+E3+A4:0.5 B2+E3+G#4:0.5 E2+B2+F#4:1 ' +
+      'G#2+D#3+B4:1 D#3+G#3+B4:0.5 G#3+C#5:0.5 G#2+D#3+D#5:1 G#2+G#3+E5:0.5 D#3+G#3+C#5:0.5 G#2+D#3+B4:1 ' +
+      'F#2+C#3+A4:1 C#3+F#3+A4:0.5 F#3+C#5:0.5 F#2+C#3+C#5:1 F#2+F#3+B4:0.5 C#3+F#3+A4:0.5 F#2+C#3+G#4:1 ' +
+      'D2+A2+A4:1 A2+D3+A4:0.5 D3+F#5:0.5 D2+A2+F#5:1 D2+D3+E5:0.5 A2+D3+D5:0.5 D2+A2+C#5:1 ' +
+      // CHORUS 1 — "watashi no saigo wa" climbs (Em·Am·F·B7 ×2)
+      'E2+B2+E3+G4:1 B2+E3+G4:0.5 E3+B4:0.5 B2+E3+B4:1 E2+B2+G4:1 E2+E3+G#4:0.5 B2+E3+B4:0.5 E2+B2+G#4:1 ' +
+      'A2+E3+A3+B4:1 E3+A3+B4:0.5 A3+E5:0.5 A2+E3+E5:1 A2+A3+G5:0.5 E3+A3+E5:0.5 A2+E3+C#5:1 ' +
+      'F2+C3+F3+C5:1 C3+F3+C5:0.5 F3+A5:0.5 F2+C3+A5:1 F2+F3+G5:0.5 C3+F3+F5:0.5 F2+C3+E5:1 ' +
+      'B2+F#3+B3+D5:1 F#3+B3+D5:0.5 B3+D#5:0.5 B2+F#3+F#5:1 B2+B3+F5:0.5 F#3+B3+D5:0.5 B2+F#3+B4:1 ' +
+      'E2+B2+E3+B4:1 B2+E3+B4:0.5 E3+G4:0.5 B2+E3+A4:1 E2+B2+G4:1 E2+E3+G#4:0.5 B2+E3+B4:0.5 E2+B2+G#4:1 ' +
+      'A2+E3+A3+B4:1 E3+A3+B4:0.5 A3+E5:0.5 A2+E3+E5:1 A2+A3+G5:0.5 E3+A3+E5:0.5 A2+E3+C#5:1 ' +
+      'F2+C3+F3+C5:1 C3+F3+C5:0.5 F3+A5:0.5 F2+C3+A5:1 F2+F3+G5:0.5 C3+F3+F5:0.5 F2+C3+E5:1 ' +
+      'B2+F#3+B3+D5:1 F#3+B3+D5:0.5 B3+F#5:0.5 B2+F#3+F#5:1 B2+B3+E5:0.5 F#3+B3+D5:0.5 B2+F#3+B4:1 ' +
+      // VERSE 2 — fuller texture
+      'E2+B2+E3+G#4:1 B2+E3+G#4:0.5 E3+B4:0.5 B2+E3+B4:1 E2+B2+G#4:1 E2+E3+A4:0.5 B2+E3+G#4:0.5 E2+B2+E4:1 ' +
+      'G#2+D#3+G#3+B4:1 D#3+G#3+B4:0.5 G#3+D#5:0.5 G#2+D#3+D#5:1 G#2+G#3+E5:0.5 D#3+G#3+C#5:0.5 G#2+D#3+B4:1 ' +
+      'F#2+C#3+F#3+A4:1 C#3+F#3+A4:0.5 F#3+C#5:0.5 F#2+C#3+C#5:1 F#2+F#3+B4:0.5 C#3+F#3+A4:0.5 F#2+C#3+G#4:1 ' +
+      'D2+A2+D3+A4:1 A2+D3+A4:0.5 D3+F#5:0.5 D2+A2+F#5:1 D2+D3+E5:0.5 A2+D3+C#5:0.5 D2+A2+B4:1 ' +
+      // CHORUS 2 — final chorus, ends with the peak
+      'E2+B2+E3+G4:1 B2+E3+G4:0.5 E3+B4:0.5 B2+E3+B4:1 E2+B2+G4:1 E2+E3+G#4:0.5 B2+E3+B4:0.5 E2+B2+G#4:1 ' +
+      'A2+E3+A3+B4:1 E3+A3+B4:0.5 A3+E5:0.5 A2+E3+E5:1 A2+A3+G5:0.5 E3+A3+E5:0.5 A2+E3+C#5:1 ' +
+      'F2+C3+F3+C5:1 C3+F3+C5:0.5 F3+A5:0.5 F2+C3+A5:1 F2+F3+G5:0.5 C3+F3+F5:0.5 F2+C3+E5:1 ' +
+      'B2+F#3+B3+D5:1 F#3+B3+D5:0.5 B3+D#5:0.5 B2+F#3+F#5:1 B2+B3+F5:0.5 F#3+B3+D5:0.5 B2+F#3+B4:1 ' +
+      'E2+B2+E3+B4:1 B2+E3+B4:0.5 E3+G4:0.5 B2+E3+A4:1 E2+B2+G4:1 E2+E3+G#4:0.5 B2+E3+B4:0.5 E2+B2+G#4:1 ' +
+      'A2+E3+A3+B4:1 E3+A3+B4:0.5 A3+E5:0.5 A2+E3+E5:1 A2+A3+G5:0.5 E3+A3+E5:0.5 A2+E3+C#5:1 ' +
+      'F2+C3+F3+C5:1 C3+F3+C5:0.5 F3+A5:0.5 F2+C3+A5:1 F2+F3+G5:0.5 C3+F3+F5:0.5 F2+C3+E5:1 ' +
+      'B2+F#3+B3+D5:1 F#3+B3+D5:0.5 B3+F#5:0.5 B2+F#3+F#5:1 B2+B3+E5:0.5 F#3+B3+D5:0.5 B2+F#3+B4:1 ' +
+      // OUTRO — the hook motif returns, resolves on a long held E
+      'E2+B2+E3+F#5:0.5 B2+E3+B5:0.5 E2+B2+A5:0.5 E2+E3+G5:0.5 E2+B2+A5:0.5 B2+E3+G5:0.5 E2+E3+E5:1 ' +
+      'G#2+D#3+G#3+A5:0.5 D#3+G#3+B5:0.5 G#2+D#3+A5:0.5 G#2+G#3+G5:0.5 G#2+D#3+A5:0.5 D#3+G#3+G5:0.5 G#2+G#3+E5:1 ' +
+      'F#2+C#3+F#3+F#5:0.5 C#3+F#3+B5:0.5 F#2+C#3+A5:0.5 F#2+F#3+G5:0.5 F#2+C#3+A5:0.5 C#3+F#3+G5:0.5 F#2+F#3+E5:1 ' +
+      'D2+A2+D3+A5:0.5 A2+D3+B5:0.5 D2+A2+A5:0.5 D2+D3+G5:0.5 D2+A2+A5:0.5 A2+D3+G5:0.5 D2+D3+E5:4'
   }
 ];
 
