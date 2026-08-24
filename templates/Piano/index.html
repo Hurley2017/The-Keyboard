@@ -12,22 +12,11 @@
 </head>
 <body>
   <div class="app">
-    <header class="topbar">
-      <div class="brand">
-        <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
-          <rect x="1.5" y="1.5" width="29" height="29" fill="var(--text)" />
-          <g fill="var(--bg)" stroke="var(--bg)" stroke-linecap="square">
-            <ellipse cx="9" cy="22.5" rx="4.2" ry="3" />
-            <line x1="12.8" y1="20.5" x2="12.8" y2="10" stroke-width="1.8" />
-            <ellipse cx="18.5" cy="19.5" rx="3.6" ry="2.6" />
-            <line x1="21.9" y1="18" x2="21.9" y2="8.5" stroke-width="1.8" />
-            <line x1="12.8" y1="10.6" x2="21.9" y2="8.8" stroke-width="2.4" />
-          </g>
-        </svg>
-        <h1>KeyNote</h1>
-        <span class="tagline">Piano Emulator</span>
+    <header class="navbar">
+      <div class="nav-head">
+        <h1>Piano Emulator</h1>
       </div>
-      <div class="controls">
+      <div class="nav-controls">
         <label class="octave-label">Octave <input id="octave" type="number" min="1" max="7" value="4" /> <span id="octaveRange" class="range-hint">C4 – B5</span></label>
         <button id="infoBtn" class="btn ghost" title="How to play">i</button>
         <button id="remapBtn" class="btn" title="Reassign the computer keys that play each piano key">Remap Keys</button>

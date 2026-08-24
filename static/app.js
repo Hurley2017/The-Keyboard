@@ -812,13 +812,29 @@ function renderSamples() {
       if (player.playing) pauseSample();
       else resumeSample();
     });
-    // click / tap anywhere on the row seeks to that horizontal position
+
+    // click / tap / drag on the row seeks to that horizontal position.
+    // The play/pause button is excluded so clicking it never scrubs.
     card.addEventListener('pointerdown', e => {
       if (player.current !== s.id) return;
-      const cardEl = card;
-      const r = cardEl.getBoundingClientRect();
-      const frac = (e.clientX - r.left) / r.width;
-      seekSample(frac);
+      if (e.target.closest('.sample-play')) return; // don't scrub from the button
+      const seekFromEvent = ev => {
+        const r = card.getBoundingClientRect();
+        const frac = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width));
+        seekSample(frac);
+      };
+      seekFromEvent(e);
+      card._scrubbing = true;
+      const move = ev => { if (card._scrubbing) seekFromEvent(ev); };
+      const up = () => {
+        card._scrubbing = false;
+        window.removeEventListener('pointermove', move);
+        window.removeEventListener('pointerup', up);
+        window.removeEventListener('pointercancel', up);
+      };
+      window.addEventListener('pointermove', move);
+      window.addEventListener('pointerup', up);
+      window.addEventListener('pointercancel', up);
     });
     // build the inverted overlay text (flips to the opposite colour only where
     // the progress bar has covered it — clipped, so it's progressive)
@@ -839,8 +855,9 @@ function buildProgOverlays(card) {
     const o = document.createElement('span');
     o.className = sel.slice(1) + ' sample-filltext';
     o.setAttribute('aria-hidden', 'true');
-    // copy children so the name keeps title + artist layout
-    for (const child of src.children) o.appendChild(child.cloneNode(true));
+    // copy the full inner content — covers text-only cells (num, dur, button)
+    // AND nested elements (name = title + artist)
+    o.innerHTML = src.innerHTML;
     card.appendChild(o);
     overlays.push({ src, o });
   }
