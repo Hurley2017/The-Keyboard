@@ -687,7 +687,7 @@ function showConflicts() {
 // climbs to the peak (G·B·C#·D·E) then falls, exactly like the song.
 const SAMPLES = [
   {
-    id: 'shinunoga', title: 'Shinunoga E-Wa', composer: 'Fujii Kaze', bpm: 80,
+    id: 'shinunoga', title: 'Shinunoga E-Wa', composer: 'Fujii Kaze', bpm: 90,
     data:
       // INTRO — hook motif over E·G#m·F#m·D, arpeggiated LH
       'E2+B2+E3+F#5:0.5 B2+E3+B5:0.5 E2+B2+A5:0.5 E2+E3+G5:0.5 E2+B2+A5:0.5 B2+E3+G5:0.5 E2+E3+E5:1 ' +
@@ -735,7 +735,19 @@ const SAMPLES = [
   }
 ];
 
-const player = { timers: [], current: null, start: 0, total: 0, fillTimer: null, card: null };
+const player = {
+  current: null,   // sample id being played
+  playing: false,  // true while the timeline is running (not paused)
+  events: [],      // parsed note events for the current sample
+  total: 0,        // total duration (seconds)
+  cursor: 0,       // current playhead time (seconds)
+  noteIdx: 0,      // index of the next note to trigger
+  activeNotes: new Map(), // midi -> voiceId currently ringing
+  card: null,      // the sample-card element being played
+  t0: 0,           // performance.now() baseline for the playhead
+  fillTimer: null, // rAF id for the master loop
+  pausedAt: 0
+};
 
 function nameToMidi(name) {
   const m = name.match(/^([A-G])([#b]?)(-?\d)$/);
@@ -786,14 +798,27 @@ function renderSamples() {
     card.className = 'sample-card';
     card.innerHTML =
       `<span class="sample-fill"></span>` +
+      `<span class="sample-seek" aria-hidden="true"></span>` +
       `<span class="sample-num">${String(i + 1).padStart(2, '0')}</span>` +
       `<span class="sample-name"><span class="sample-title"></span><span class="sample-artist"></span></span>` +
       `<span class="sample-dur">${fmt}</span>` +
       `<button class="btn ghost sample-play" data-sample="${s.id}">▶ Play</button>`;
     card.querySelector('.sample-title').textContent = s.title;
     card.querySelector('.sample-artist').textContent = s.composer;
-    card.querySelector('.sample-play').addEventListener('click', () => {
-      player.current === s.id ? stopSample() : playSample(s);
+    card.querySelector('.sample-play').addEventListener('click', e => {
+      e.stopPropagation();
+      if (player.current !== s.id) { playSample(s); return; }
+      // same cover: toggle pause / resume
+      if (player.playing) pauseSample();
+      else resumeSample();
+    });
+    // click / tap anywhere on the row seeks to that horizontal position
+    card.addEventListener('pointerdown', e => {
+      if (player.current !== s.id) return;
+      const cardEl = card;
+      const r = cardEl.getBoundingClientRect();
+      const frac = (e.clientX - r.left) / r.width;
+      seekSample(frac);
     });
     // build the inverted overlay text (flips to the opposite colour only where
     // the progress bar has covered it — clipped, so it's progressive)
@@ -808,7 +833,7 @@ function renderSamples() {
 // and gets clipped to the progress bar region as it grows.
 function buildProgOverlays(card) {
   const overlays = [];
-  for (const sel of ['.sample-num', '.sample-name', '.sample-dur']) {
+  for (const sel of ['.sample-num', '.sample-name', '.sample-dur', '.sample-play']) {
     const src = card.querySelector(sel);
     if (!src) continue;
     const o = document.createElement('span');
@@ -835,6 +860,7 @@ function positionProgOverlays(card) {
     o.style.width = r.width + 'px';
     o.style.height = r.height + 'px';
     o.style.lineHeight = getComputedStyle(src).lineHeight;
+    o.style.font = getComputedStyle(src).font;
     o.style.clipPath = 'inset(0 100% 0 0)'; // hidden until the bar reaches it
   }
 }
@@ -854,27 +880,20 @@ function updateProgOverlays(card, pct) {
 }
 
 function playSample(s) {
+  // fresh start (or restart from 0); a second Play while playing = stop
+  if (player.current === s.id) { stopSample(); return; }
   stopSample();
   player.current = s.id;
-  const { events, total } = parseSong(s.data, s.bpm);
+  player.events = parseSong(s.data, s.bpm).events;
+  player.total = parseSong(s.data, s.bpm).total;
+  player.cursor = 0;
+  player.playing = true;
+  player.pausedAt = 0;
+  player.noteIdx = 0;
+  player.activeNotes = new Map(); // midi -> voiceId
   setStatus(`Now playing — ${s.title} (${s.composer})`);
-  events.forEach(ev => {
-    player.timers.push(setTimeout(() => {
-      if (player.current !== s.id) return;
-      engine.ensure();
-      // token release: the cover only ever cuts its own voice, never the
-      // note the user is playing along with
-      const voiceId = engine.noteOn(ev.midi);
-      pressVisual(ev.midi, true);
-      spawnNoteAt(ev.midi);
-      player.timers.push(setTimeout(() => {
-        pressVisual(ev.midi, false);
-        engine.noteOff(ev.midi, voiceId);
-      }, ev.dur * 1000));
-    }, ev.time * 1000));
-  });
-  // progress fill: grows left to right in the opposite theme colour, driven
-  // by requestAnimationFrame so it animates smoothly (no stepped jumps)
+  engine.ensure();
+
   const playBtn = document.querySelector(`.sample-play[data-sample="${s.id}"]`);
   const card = playBtn && playBtn.closest('.sample-card');
   if (card) {
@@ -882,23 +901,32 @@ function playSample(s) {
     const fill = card.querySelector('.sample-fill');
     fill.style.transform = 'scaleX(0)';
     updateProgOverlays(card, 0);
-    player.start = performance.now();
-    player.total = total * 1000;
-    const tick = (now) => {
-      if (!player.card) { player.fillTimer = null; return; }
-      const pct = Math.min(1, (now - player.start) / player.total);
-      player.card.querySelector('.sample-fill').style.transform = `scaleX(${pct})`;
-      updateProgOverlays(player.card, pct);
-      if (pct < 1) {
-        player.fillTimer = requestAnimationFrame(tick);
-      } else {
-        player.fillTimer = null;
-      }
-    };
-    player.fillTimer = requestAnimationFrame(tick);
   }
-  player.timers.push(setTimeout(() => stopSample(), (total + 0.4) * 1000));
+
+  player.t0 = performance.now();
   updateSampleButtons();
+  requestAnimationFrame(playerLoop);
+}
+
+function pauseSample() {
+  if (!player.playing) return;
+  player.playing = false;
+  player.pausedAt = player.cursor;
+  // cut all currently sounding cover notes so nothing hangs mid-pause
+  for (const [midi, vid] of player.activeNotes) engine.noteOff(midi, vid);
+  player.activeNotes.clear();
+  if (player.fillTimer != null) { cancelAnimationFrame(player.fillTimer); player.fillTimer = null; }
+  updateSampleButtons();
+  setStatus('Paused.');
+}
+
+function resumeSample() {
+  if (player.playing || !player.current) return;
+  player.playing = true;
+  player.t0 = performance.now() - player.cursor * 1000;
+  updateSampleButtons();
+  setStatus('Resumed.');
+  requestAnimationFrame(playerLoop);
 }
 
 function stopSample() {
@@ -909,21 +937,95 @@ function stopSample() {
     updateProgOverlays(player.card, 0);
     player.card = null;
   }
+  // release any cover voices that are still ringing
+  for (const [midi, vid] of player.activeNotes) engine.noteOff(midi, vid);
+  player.activeNotes = new Map();
   player.current = null;
-  player.timers.forEach(clearTimeout);
-  player.timers = [];
+  player.playing = false;
+  player.events = [];
+  player.total = 0;
+  player.cursor = 0;
+  player.noteIdx = 0;
   engine.panic();
   updateSampleButtons();
   setStatus('Ready.');
 }
 
+// Seek to a fraction (0..1) of the cover. Stops anything currently sounding,
+// rewinds/forwards the cursor, and restarts the timeline loop.
+function seekSample(frac) {
+  if (!player.current) return;
+  const t = Math.max(0, Math.min(1, frac)) * player.total;
+  // stop any currently ringing notes
+  for (const [midi, vid] of player.activeNotes) engine.noteOff(midi, vid);
+  player.activeNotes.clear();
+  player.cursor = t;
+  player.noteIdx = 0;
+  // rewind the note index to the first note at/after the cursor
+  while (player.noteIdx < player.events.length && player.events[player.noteIdx].time + player.events[player.noteIdx].dur < t) {
+    player.noteIdx++;
+  }
+  player.playing = true;
+  player.pausedAt = 0;
+  player.t0 = performance.now() - t * 1000;
+  if (player.fillTimer != null) { cancelAnimationFrame(player.fillTimer); player.fillTimer = null; }
+  updateSampleButtons();
+  requestAnimationFrame(playerLoop);
+}
+
+// The master loop: advances the cursor, triggers/releases notes, and drives
+// the progress fill + inverted text overlays.
+function playerLoop(now) {
+  if (!player.playing || !player.current) return;
+  const cursor = (now - player.t0) / 1000;
+  player.cursor = cursor;
+
+  // start notes that have come due
+  const evs = player.events;
+  while (player.noteIdx < evs.length && evs[player.noteIdx].time <= cursor) {
+    const ev = evs[player.noteIdx];
+    if (player.current && ev.time + ev.dur > cursor) {
+      engine.ensure();
+      const voiceId = engine.noteOn(ev.midi);
+      player.activeNotes.set(ev.midi, voiceId);
+      pressVisual(ev.midi, true);
+      spawnNoteAt(ev.midi);
+    }
+    player.noteIdx++;
+  }
+  // release notes whose window has passed
+  for (let i = player.noteIdx - 1; i >= 0; i--) {
+    const ev = evs[i];
+    if (player.activeNotes.has(ev.midi) && ev.time + ev.dur <= cursor) {
+      engine.noteOff(ev.midi, player.activeNotes.get(ev.midi));
+      player.activeNotes.delete(ev.midi);
+      pressVisual(ev.midi, false);
+    }
+  }
+
+  const pct = Math.min(1, cursor / player.total);
+  if (player.card) {
+    player.card.querySelector('.sample-fill').style.transform = `scaleX(${pct})`;
+    updateProgOverlays(player.card, pct);
+  }
+
+  if (cursor >= player.total) {
+    stopSample();
+    return;
+  }
+  player.fillTimer = requestAnimationFrame(playerLoop);
+}
+
 function updateSampleButtons() {
   document.querySelectorAll('.sample-play').forEach(btn => {
-    const active = btn.dataset.sample === player.current;
-    btn.textContent = active ? '■ Stop' : '▶ Play';
+    const isThis = btn.dataset.sample === player.current;
+    const active = isThis && player.playing;
+    const paused = isThis && !player.playing && player.current != null;
+    btn.textContent = !isThis ? '▶ Play' : (player.playing ? '❚❚ Pause' : (player.current != null ? '▶ Resume' : '▶ Play'));
     btn.classList.toggle('playing', active);
+    btn.classList.toggle('paused', paused);
     const card = btn.closest('.sample-card');
-    if (card) card.classList.toggle('playing', active); // opposite-colour fill
+    if (card) card.classList.toggle('playing', active);
   });
 }
 

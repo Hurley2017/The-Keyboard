@@ -599,14 +599,14 @@ main {
 
 .sample-card.playing { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
 
+/* the whole row is the seek bar: pointer cursor + tap/click seeks */
+.sample-card { cursor: pointer; }
+
 /* text sits above the card but below the fill + inverted overlay */
 .sample-card > .sample-num,
 .sample-card > .sample-name,
 .sample-card > .sample-dur,
 .sample-card > .sample-play { position: relative; z-index: 1; }
-
-/* play/stop button stays clickable above the fill layer */
-.sample-card.playing .sample-play { z-index: 3; }
 
 /* progress + opposite-colour fill while a cover plays (grows left to right) */
 /* solid theme colour — pure white in dark mode, pure black in light mode */
@@ -620,6 +620,19 @@ main {
   pointer-events: none;
   will-change: transform;
 }
+
+/* thin seek track along the bottom edge of the row */
+.sample-seek {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--border);
+  z-index: 1;
+  pointer-events: none;
+}
+.sample-card.playing .sample-seek { background: var(--muted); }
 
 /* inverted overlay text: sits on top of the fill and is clipped to the bar
    region as it grows, so ONLY the covered text flips to the opposite colour,
@@ -636,6 +649,24 @@ main {
 }
 .sample-filltext.sample-num { font-family: var(--font-mono); font-size: 10px; }
 .sample-filltext.sample-dur { font-family: var(--font-mono); font-size: 10px; text-align: right; }
+
+/* the play/pause button reacts too: its overlay is a solid inverted chip
+   (border + background) clipped to the bar region */
+.sample-filltext.sample-play {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 12px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  border: 1px solid var(--bg);
+  border-radius: 2px;
+  background: var(--bg);
+  color: var(--text);
+}
 
 .sample-filltext.sample-name {
   display: flex;

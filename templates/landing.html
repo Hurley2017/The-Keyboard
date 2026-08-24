@@ -27,6 +27,22 @@
       --muted: #6f6f6f;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* round cursor follower — same as the piano app */
+    html.round-cursor, html.round-cursor * { cursor: none !important; }
+    .cursor-dot, .cursor-ring {
+      position: fixed; left: 0; top: 0; pointer-events: none;
+      border-radius: 50%; z-index: 2147483647;
+      mix-blend-mode: difference; will-change: transform;
+    }
+    .cursor-dot { width: 7px; height: 7px; background: #fff; }
+    .cursor-ring {
+      width: 36px; height: 36px; border: 1.5px solid #fff;
+      opacity: 0.7;
+      transition: width 0.12s ease, height 0.12s ease, opacity 0.15s ease;
+    }
+    .cursor-ring.down { width: 22px; height: 22px; opacity: 1; }
+
     body {
       font-family: var(--font);
       font-size: 14px;
@@ -34,75 +50,161 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      background: var(--bg);
+      background:
+        radial-gradient(1100px 500px at 50% -8%, #161616 0%, transparent 62%),
+        var(--bg);
       transition: background-color 0.3s ease, color 0.3s ease;
+      user-select: none;
+      overflow-x: hidden;
     }
-    :root[data-theme="light"] body { background: var(--bg); }
+
     .wrap {
-      flex: 1;
-      width: min(980px, 92vw);
+      width: min(1200px, 94vw);
       margin: 0 auto;
-      padding: 60px 0 40px;
-      text-align: center;
+      padding: 56px 0 48px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
     }
-    .logo { font-size: 40px; }
-    .wrap h1 {
-      font-size: 36px;
+
+    /* top-left header: Icon | KEYNOTE | Subtext */
+    .masthead { display: flex; align-items: center; gap: 18px; }
+    .masthead .mark {
+      width: 46px; height: 46px;
+      background: var(--text);
+      color: var(--bg);
+      display: grid; place-items: center;
+      font-size: 26px;
+      border-radius: 2px;
+      box-shadow: 0 0 0 1px var(--text);
+      flex: 0 0 auto;
+    }
+    .masthead h1 {
+      font-size: 26px;
       font-weight: 700;
-      letter-spacing: 3px;
+      letter-spacing: 6px;
       text-transform: uppercase;
-      margin-top: 12px;
-      color: var(--text);
+      line-height: 1;
     }
-    .subtitle {
+    .masthead .sub {
       font-family: var(--font-mono);
-      color: var(--muted);
-      margin-top: 8px;
       font-size: 11px;
       letter-spacing: 2.5px;
       text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 6px;
     }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 14px;
-      margin-top: 44px;
-      text-align: left;
+      gap: 16px;
+      margin-top: 48px;
+      justify-content: start;
     }
+
+    /* 3:5 portrait cards, starting top-left */
     .card {
+      position: relative;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      gap: 18px;
-      padding: 22px;
+      aspect-ratio: 3 / 5;
+      padding: 20px;
       background: var(--panel);
       border: 1px solid var(--border);
       border-radius: 3px;
       text-decoration: none;
       color: var(--text);
-      transition: transform 0.12s ease, border-color 0.12s ease, background-color 0.3s ease;
+      overflow: hidden;
+      transition: transform 0.14s ease, border-color 0.14s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease;
     }
     .card:hover {
-      transform: translateY(-3px);
+      transform: translateY(-4px);
       border-color: var(--text);
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
     }
-    .card .icon { font-size: 30px; }
-    .card h2 { font-size: 18px; letter-spacing: 0.5px; }
-    .card p {
+
+    /* surprise: a piano-key keyboard rendered in the card, inverting on hover */
+    .card .keys {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      height: 46%;
+      display: flex;
+      pointer-events: none;
+      transition: background-color 0.2s ease;
+    }
+    .card .keys .wk { flex: 1 1 0; background: #dcdcdc; border-right: 1px solid var(--border); }
+    :root[data-theme="light"] .card .keys .wk { background: #f4f4f4; }
+    .card .keys .bk { flex: 0 0 0; position: relative; }
+    .card .keys .bk::after {
+      content: "";
+      position: absolute;
+      left: -30%; top: 0;
+      width: 60%; height: 62%;
+      background: #101010;
+      border-radius: 0 0 2px 2px;
+    }
+    :root[data-theme="light"] .card .keys .bk::after { background: #222; }
+
+    .card .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       font-family: var(--font-mono);
-      font-size: 11.5px;
-      line-height: 1.6;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
       color: var(--muted);
     }
-    .card .enter {
+    .card .top .index { color: var(--text); }
+    .card .icon {
+      width: 40px; height: 40px;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      display: grid; place-items: center;
+      font-size: 20px;
+      margin-top: 18px;
+      background: var(--panel-2);
+      transition: transform 0.14s ease;
+    }
+    .card:hover .icon { transform: scale(1.08); }
+    .card h2 {
+      font-size: 19px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-top: auto;
+    }
+    .card .desc {
       font-family: var(--font-mono);
-      font-size: 11px;
+      font-size: 10.5px;
+      line-height: 1.55;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+    .card .enter {
+      margin-top: 14px;
+      font-family: var(--font-mono);
+      font-size: 10px;
       letter-spacing: 2px;
       text-transform: uppercase;
       color: var(--text);
-      margin-top: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
     }
-    .card:hover .enter { text-decoration: underline; text-underline-offset: 3px; }
+    .card .enter::after { content: "→"; transition: transform 0.14s ease; }
+    .card:hover .enter::after { transform: translateX(4px); }
+
+    /* hover inverts the card monochrome-style */
+    .card:hover { background: var(--text); color: var(--bg); }
+    .card:hover .top,
+    .card:hover .desc { color: var(--bg); opacity: 0.7; }
+    .card:hover .top .index { color: var(--bg); }
+    .card:hover .icon { border-color: var(--bg); background: var(--bg); color: var(--text); }
+    .card:hover .enter { color: var(--bg); }
+    .card:hover .keys .wk { background: var(--bg); border-color: var(--bg); }
+    .card:hover .keys .bk::after { background: var(--text); }
+
     footer {
       font-family: var(--font-mono);
       color: var(--muted);
@@ -116,17 +218,25 @@
 </head>
 <body>
   <div class="wrap">
-    <div class="logo">♪</div>
-    <h1>KeyNote</h1>
-    <p class="subtitle">Virtual instruments, playable from your keyboard</p>
+    <header class="masthead">
+      <div class="mark">♪</div>
+      <div>
+        <h1>KeyNote</h1>
+        <div class="sub">Virtual instruments, playable from your keyboard</div>
+      </div>
+    </header>
 
     <div class="grid">
       {% for name in instruments %}
       <a class="card" href="{{ '/' + name }}">
+        <div class="top"><span class="index">0{{ loop.index }}</span><span>{{ name }}</span></div>
         <div class="icon">♪</div>
         <h2>{{ name }}</h2>
-        <p>Play {{ name }} live with your computer keyboard. Keys are fully remappable.</p>
-        <div class="enter">Open {{ name }} →</div>
+        <p class="desc">Play {{ name }} live with your computer keyboard. Keys are fully remappable.</p>
+        <div class="enter">Open {{ name }}</div>
+        <div class="keys" aria-hidden="true">
+          <span class="wk"></span><span class="bk"></span><span class="wk"></span><span class="bk"></span><span class="wk"></span><span class="bk"></span><span class="wk"></span><span class="wk"></span><span class="bk"></span><span class="wk"></span><span class="bk"></span><span class="wk"></span><span class="bk"></span><span class="wk"></span>
+        </div>
       </a>
       {% endfor %}
     </div>
@@ -143,6 +253,38 @@
       var saved = 'dark';
       try { saved = localStorage.getItem('keynote.theme') || 'dark'; } catch (e) {}
       document.documentElement.dataset.theme = saved;
+    })();
+
+    // round cursor follower — identical to the piano page
+    (function () {
+      if (!window.matchMedia || !matchMedia('(pointer: fine)').matches) return;
+      var dot = document.createElement('div'); dot.className = 'cursor-dot';
+      var ring = document.createElement('div'); ring.className = 'cursor-ring';
+      document.body.append(dot, ring);
+      document.documentElement.classList.add('round-cursor');
+
+      var tx = 0, ty = 0, rx = 0, ry = 0, raf = null;
+      function frame() {
+        raf = null;
+        dot.style.transform = 'translate(' + tx + 'px,' + ty + 'px) translate(-50%,-50%)';
+        rx += (tx - rx) * 0.16;
+        ry += (ty - ry) * 0.16;
+        ring.style.transform = 'translate(' + rx + 'px,' + ry + 'px) translate(-50%,-50%)';
+        if (Math.abs(tx - rx) > 0.1 || Math.abs(ty - ry) > 0.1) raf = requestAnimationFrame(frame);
+      }
+      document.addEventListener('pointermove', function (e) {
+        tx = e.clientX; ty = e.clientY;
+        if (!raf) raf = requestAnimationFrame(frame);
+      }, { passive: true });
+      document.addEventListener('pointerdown', function () { ring.classList.add('down'); });
+      document.addEventListener('pointerup', function () { ring.classList.remove('down'); });
+      document.addEventListener('pointercancel', function () { ring.classList.remove('down'); });
+      document.documentElement.addEventListener('mouseleave', function () {
+        dot.style.opacity = ring.style.opacity = '0';
+      });
+      document.documentElement.addEventListener('mouseenter', function () {
+        dot.style.opacity = ring.style.opacity = '';
+      });
     })();
   </script>
 </body>
